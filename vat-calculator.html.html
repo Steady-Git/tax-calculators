@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>부가세 계산기</title>
+</head>
+
+<body>
+
+<h2>부가가치세 계산기</h2>
+
+매출액  
+<input type="number" id="sales"><br><br>
+
+매입액  
+<input type="number" id="purchase"><br><br>
+
+<button onclick="calc()">계산</button>
+
+<h3 id="result"></h3>
+
+<script>
+
+function calc(){
+
+let sales = Number(document.getElementById("sales").value)
+let purchase = Number(document.getElementById("purchase").value)
+
+let output = sales*0.1
+let input = purchase*0.1
+
+let tax = output-input
+
+document.getElementById("result").innerHTML =
+"납부세액: "+tax.toLocaleString()+"원"
+
+}
+
+</script>
+
+</body>
+</html>

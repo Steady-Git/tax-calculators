@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>취득세 계산기</title>
+</head>
+
+<body>
+
+<h2>취득세 계산기</h2>
+
+취득가액  
+<input type="number" id="price"><br><br>
+
+주택 수  
+<select id="house">
+<option value="1">1주택</option>
+<option value="2">2주택</option>
+<option value="3">3주택 이상</option>
+</select>
+
+<br><br>
+
+조정지역  
+<select id="area">
+<option value="no">아니오</option>
+<option value="yes">예</option>
+</select>
+
+<br><br>
+
+<button onclick="calc()">계산</button>
+
+<h3 id="result"></h3>
+
+<script>
+
+function calc(){
+
+let price = Number(document.getElementById("price").value)
+let house = document.getElementById("house").value
+let area = document.getElementById("area").value
+
+let rate = 0.01
+
+if(house==2){
+rate = area=="yes"?0.08:0.01
+}
+
+if(house==3){
+rate = 0.12
+}
+
+let tax = price*rate
+let edu = tax*0.1
+let rural = tax*0.2
+
+let total = tax+edu+rural
+
+document.getElementById("result").innerHTML =
+"총 취득세: "+total.toLocaleString()+"원"
+
+}
+
+</script>
+
+</body>
+</html>
