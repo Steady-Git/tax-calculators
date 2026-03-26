@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>세(금)계(산기).zip</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f4ef;
+  --ink: #1a1814;
+  --ink-muted: #6b6760;
+  --ink-dim: #b0ada8;
+  --accent: #c8401a;
+  --accent-light: rgba(200,64,26,0.08);
+  --accent-mid: rgba(200,64,26,0.18);
+  --surface: #ffffff;
+  --surface2: #f0ece5;
+  --border: rgba(26,24,20,0.1);
+  --border2: rgba(26,24,20,0.2);
+  --tag-re: #c8401a;
+  --tag-blue: #1a5fc8;
+  --tag-green: #1a8c4e;
+  --tag-purple: #6b1ac8;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── 배경 텍스처 ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(200,64,26,0.04) 0%, transparent 50%),
+    radial-gradient(circle at 85% 80%, rgba(26,95,200,0.04) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
+}
+
+.wrap { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 0 1.5rem 5rem; }
+
+/* ── 헤더 ── */
+header {
+  padding: 3.5rem 0 3rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 3rem;
+}
+
+.logo-block {}
+.logo-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.logo-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: clamp(32px, 6vw, 52px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+.logo-title .paren { color: var(--accent); }
+.logo-title .zip {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55em;
+  font-weight: 500;
+  color: var(--ink-muted);
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.logo-sub {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-top: 10px;
+  line-height: 1.6;
+}
+
+.header-meta {
+  text-align: right;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-dim);
+  line-height: 2;
+  flex-shrink: 0;
+}
+
+/* ── 섹션 ── */
+.section { margin-bottom: 2.5rem; }
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border2);
+}
+.section-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-dim);
+  letter-spacing: 0.05em;
+}
+.section-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+.section-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-dim);
+  margin-left: auto;
+}
+
+/* ── 서브 섹션 ── */
+.subsection { margin-bottom: 1.25rem; }
+.subsection-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 0.6rem;
+  padding-left: 2px;
+}
+
+/* ── 카드 그리드 ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.card-grid.sub {
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+}
+
+/* ── 카드 ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--accent-light);
+  opacity: 0;
+  transition: opacity 0.15s;
+  border-radius: inherit;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26,24,20,0.1); border-color: var(--border2); }
+.card:hover::after { opacity: 1; }
+.card:active { transform: translateY(0); }
+
+.card.empty {
+  background: transparent;
+  border: 1px dashed var(--border);
+  cursor: default;
+  opacity: 0.5;
+}
+.card.empty:hover { transform: none; box-shadow: none; border-color: var(--border); }
+.card.empty::after { display: none; }
+
+.card-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 100px;
+  font-weight: 500;
+  width: fit-content;
+}
+.tag-re   { background: rgba(200,64,26,0.1);  color: var(--tag-re); }
+.tag-blue { background: rgba(26,95,200,0.1);  color: var(--tag-blue); }
+.tag-green{ background: rgba(26,140,78,0.1);  color: var(--tag-green); }
+.tag-purple{background: rgba(107,26,200,0.1); color: var(--tag-purple); }
+.tag-empty{ background: var(--surface2); color: var(--ink-dim); }
+
+.card-name {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+.card-desc {
+  font-size: 11px;
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+.card-arrow {
+  margin-top: auto;
+  padding-top: 6px;
+  font-size: 12px;
+  color: var(--accent);
+  font-family: 'DM Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.card.empty .card-arrow { display: none; }
+
+/* ── 양도세 특수 서브트리 ── */
+.subtree {
+  margin-left: 0;
+  padding-left: 1rem;
+  border-left: 2px solid var(--border2);
+  margin-top: 0.75rem;
+}
+
+/* ── 푸터 ── */
+footer {
+  border-top: 1px solid var(--border);
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--ink-dim);
+  line-height: 1.8;
+}
+footer .f-brand {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+
+/* ── 계산기 iframe 모달 ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,24,20,0.55);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--bg);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(26,24,20,0.25);
+  animation: modalIn 0.2s ease;
+}
+@keyframes modalIn {
+  from { transform: translateY(16px) scale(0.98); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.modal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--surface);
+}
+.modal-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.modal-actions { display: flex; gap: 8px; align-items: center; }
+.modal-btn {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 500;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+.modal-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.modal-btn.close-btn { border-color: transparent; }
+.modal-btn.close-btn:hover { background: var(--surface2); color: var(--ink); border-color: var(--border); }
+
+.modal-frame {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.modal-frame iframe {
+  width: 100%;
+  border: none;
+  display: block;
+  min-height: 600px;
+}
+
+@media (max-width: 600px) {
+  header { flex-direction: column; align-items: flex-start; }
+  .header-meta { text-align: left; }
+  .card-grid { grid-template-columns: 1fr 1fr; }
+  .modal { max-height: 95vh; border-radius: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 헤더 -->
+  <header>
+    <div class="logo-block">
+      <div class="logo-eyebrow">Korean Tax Calculator Suite</div>
+      <div class="logo-title">
+        세<span class="paren">(</span>금<span class="paren">)</span>계<span class="paren">(</span>산기<span class="paren">)</span><span class="zip">.zip</span>
+      </div>
+      <div class="logo-sub">부동산 · 상증세 · 사업자 · 인사노무<br>자주 쓰는 세금 계산기 모음</div>
+    </div>
+    <div class="header-meta">
+      계산기 7종<br>
+      2026 기준<br>
+      참고용
+    </div>
+  </header>
+
+  <!-- 01 부동산세금 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">부동산세금</span>
+      <span class="section-count">5 calculators</span>
+    </div>
+
+    <!-- 취득세 -->
+    <div class="subsection">
+      <div class="subsection-label">취득세</div>
+      <div class="card-grid sub">
+        <div class="card empty">
+          <span class="card-tag tag-empty">준비중</span>
+          <span class="card-name">취득세</span>
+          <span class="card-desc">주택·토지·건물 취득시 납부</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 재산세 -->
+    <div class="subsection">
+      <div class="subsection-label">재산세</div>
+      <div class="card-grid sub">
+        <a class="card" onclick="openCalc('property.html', '재산세 계산기')">
+          <span class="card-tag tag-re">부동산</span>
+          <span class="card-name">재산세</span>
+          <span class="card-desc">주택·토지·건물 보유세</span>
+          <span class="card-arrow">열기 →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- 종부세 -->
+    <div class="subsection">
+      <div class="subsection-label">종합부동산세</div>
+      <div class="card-grid sub">
+        <a class="card" onclick="openCalc('comprehensive.html', '종합부동산세 계산기')">
+          <span class="card-tag tag-re">부동산</span>
+          <span class="card-name">종합부동산세</span>
+          <span class="card-desc">고가 부동산 보유세</span>
+          <span class="card-arrow">열기 →</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- 양도세 -->
+    <div class="subsection">
+      <div class="subsection-label">양도소득세</div>
+      <div class="card-grid sub">
+        <a class="card" onclick="openCalc('capital.html', '양도소득세 계산기 — 기본')">
+          <span class="card-tag tag-re">부동산</span>
+          <span class="card-name">기본</span>
+          <span class="card-desc">일반 양도소득세 계산</span>
+          <span class="card-arrow">열기 →</span>
+        </a>
+        <a class="card" onclick="openCalc('capitalhigh.html', '1세대 1주택 고가주택')">
+          <span class="card-tag tag-re">부동산</span>
+          <span class="card-name">1세대1주택<br>고가주택</span>
+          <span class="card-desc">12억 초과 비과세 계산</span>
+          <span class="card-arrow">열기 →</span>
+        </a>
+        <div class="card empty">
+          <span class="card-tag tag-empty">준비중</span>
+          <span class="card-name">부담부증여</span>
+          <span class="card-desc">채무 포함 증여 양도세</span>
+        </div>
+        <div class="card empty">
+          <span class="card-tag tag-empty">준비중</span>
+          <span class="card-name">저가·고가 양도</span>
+          <span class="card-desc">특수관계인 간 거래</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 상증세 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">상증세</span>
+      <span class="section-count">2 calculators</span>
+    </div>
+    <div class="card-grid">
+      <div class="card empty">
+        <span class="card-tag tag-empty">준비중</span>
+        <span class="card-name">상속세</span>
+        <span class="card-desc">사망으로 인한 재산 이전세</span>
+      </div>
+      <a class="card" onclick="openCalc('gift.html', '증여세 계산기')">
+        <span class="card-tag tag-purple">상증세</span>
+        <span class="card-name">증여세</span>
+        <span class="card-desc">재산 무상이전 세금 계산</span>
+        <span class="card-arrow">열기 →</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- 03 사업자 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">사업자</span>
+      <span class="section-count">1 calculator</span>
+    </div>
+    <div class="card-grid">
+      <a class="card" onclick="openCalc('obligation.html', '기장의무 · 경비율 판단기')">
+        <span class="card-tag tag-green">사업자</span>
+        <span class="card-name">기장의무</span>
+        <span class="card-desc">복식·간편장부 의무 및 경비율 판단</span>
+        <span class="card-arrow">열기 →</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- 04 인사노무 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">인사노무</span>
+      <span class="section-count">1 calculator</span>
+    </div>
+    <div class="card-grid">
+      <a class="card" onclick="openCalc('salary.html', '네트급여 계산기')">
+        <span class="card-tag tag-blue">인사노무</span>
+        <span class="card-name">네트급여</span>
+        <span class="card-desc">실수령액으로 세전 급여 역산</span>
+        <span class="card-arrow">열기 →</span>
+      </a>
+    </div>
+  </div>
+
+  <footer>
+    <div>
+      <div class="f-brand">세(금)계(산기).zip</div>
+      참고용 계산기입니다. 실제 세액은 전문가 상담을 통해 확인하세요.
+    </div>
+    <div style="text-align:right;">
+      7종 계산기 수록<br>
+      2026년 기준 법령 적용
+    </div>
+  </footer>
+</div>
+
+<!-- 모달 -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-bar">
+      <span class="modal-title" id="modalTitle">계산기</span>
+      <div class="modal-actions">
+        <a class="modal-btn" id="modalNewTab" href="#" target="_blank">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          새 탭
+        </a>
+        <button class="modal-btn close-btn" onclick="closeCalc()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          닫기
+        </button>
+      </div>
+    </div>
+    <div class="modal-frame">
+      <iframe id="calcFrame" src="" title="계산기"></iframe>
+    </div>
+  </div>
+</div>
+
+<script>
+function openCalc(file, title) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('calcFrame').src = file;
+  document.getElementById('modalNewTab').href = file;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeCalc() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  setTimeout(() => { document.getElementById('calcFrame').src = ''; }, 300);
+}
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeCalc();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCalc(); });
+</script>
+</body>
+</html>
