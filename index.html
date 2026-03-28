@@ -431,6 +431,7 @@ nav { padding: 0.5rem 0; flex: 1; }
           <div class="nav-group-label">양도소득세</div>
           <button class="nav-item" onclick="openCalc('capital.html','양도소득세 — 기본',this)"><span class="nav-dot"></span>기본</button>
           <button class="nav-item" onclick="openCalc('capitalhigh.html','1세대1주택 고가주택',this)"><span class="nav-dot"></span>1세대1주택 고가주택</button>
+          <button class="nav-item" onclick="openCalc('capitalheavy.html','다주택자 중과',this)"><span class="nav-dot"></span>다주택자 중과</button>
           <button class="nav-item empty"><span class="nav-dot"></span>부담부증여<span class="nav-badge">준비중</span></button>
           <button class="nav-item" onclick="openCalc('capital-low.html','저가·고가양도 계산기',this)"><span class="nav-dot"></span>저가·고가 양도</button>
         </div>
@@ -510,6 +511,12 @@ nav { padding: 0.5rem 0; flex: 1; }
             <span class="card-tag tag-re">양도세</span>
             <span class="card-name">1세대1주택<br>고가주택</span>
             <span class="card-desc">12억 초과 비과세 계산</span>
+            <span class="card-arrow">열기 →</span>
+          </div>
+          <div class="card" onclick="openCalc('capitalheavy.html','다주택자 중과',null)">
+            <span class="card-tag tag-re">양도세</span>
+            <span class="card-name">다주택자 중과</span>
+            <span class="card-desc">조정대상지역 중과세율 적용</span>
             <span class="card-arrow">열기 →</span>
           </div>
           <div class="card empty">
