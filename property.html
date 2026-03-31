@@ -785,15 +785,16 @@ function calculate() {
     tax = Math.floor(isSpecial ? houseTaxSpecial(base) : houseTaxGeneral(base));
     urbanTax = isUrban ? Math.floor(base * 0.0014) : 0;
 
-    // 소방분 과세표준: 건축물 시가표준액 × 공정시장가액비율 (미입력 시 재산세 과세표준 사용)
-    const fireStd = stdVal > 0 ? stdVal : (price > 0 ? Math.floor(price * ratio) : base);
-    const fireBase = stdVal > 0 ? Math.floor(stdVal * ratio) : base;
+    // 소방분 과세표준: 건축물 시가표준액 × 공정시장가액비율
+    // 시가표준액 미입력(0원) 시 지역자원시설세 = 0
+    const fireStd = stdVal > 0 ? stdVal : 0;
+    const fireBase = stdVal > 0 ? Math.floor(stdVal * ratio) : 0;
     const fireMult = parseInt(document.getElementById('h-fire').value);
-    fireTax = Math.floor(fireTaxBase(fireBase) * fireMult);
-    fireExempt = fireTax < 2000;
+    fireTax = fireBase > 0 ? Math.floor(fireTaxBase(fireBase) * fireMult) : 0;
+    fireExempt = fireBase > 0 && fireTax < 2000;
     const fireLabel = fireMult > 1
-      ? `지역자원시설세 (${fireTaxLabel(fireBase)}, ${fireMult}배 중과)`
-      : `지역자원시설세 (${fireTaxLabel(fireBase)})`;
+      ? `지역자원시설세 (${fireBase > 0 ? fireTaxLabel(fireBase) : '—'}, ${fireMult}배 중과)`
+      : `지역자원시설세 (${fireBase > 0 ? fireTaxLabel(fireBase) : '시가표준액 미입력'})`;
 
     eduTax = Math.floor(tax * 0.2);
     total = tax + urbanTax + (fireExempt ? 0 : fireTax) + eduTax;
@@ -807,14 +808,18 @@ function calculate() {
     addStep(stepsEl, '= 재산세 본세', fmtFull(tax));
     if (isUrban) addStep(stepsEl, '+ 도시지역분 (과세표준 × 0.14%)', fmtFull(urbanTax));
     if (stdVal > 0) {
-      addStep(stepsEl, `건축물 시가표준액`, fmtFull(fireStd));
+      addStep(stepsEl, '건축물 시가표준액', fmtFull(fireStd));
       addStep(stepsEl, `× 공정시장가액비율 (${Math.round(ratio*100)}%) = 소방분 과세표준`, fmtFull(fireBase));
+      addStep(stepsEl, fireExempt ? `+ ${fireLabel} → 소액징수면제` : `+ ${fireLabel}`, fireExempt ? '면제' : fmtFull(fireTax));
+    } else {
+      addStep(stepsEl, '+ 지역자원시설세 (건축물 시가표준액 미입력)', '0원');
     }
-    addStep(stepsEl, fireExempt ? `+ ${fireLabel} → 소액징수면제` : `+ ${fireLabel}`, fireExempt ? '면제' : fmtFull(fireTax));
     addStep(stepsEl, '+ 지방교육세 (본세 × 20%)', fmtFull(eduTax));
     addStep(stepsEl, '총 납부세액', fmtFull(total), true);
 
-    document.getElementById('res-fire').textContent = fireExempt ? '면제 (2천원 미만)' : fmtFull(fireTax);
+    document.getElementById('res-fire').textContent = stdVal > 0
+      ? (fireExempt ? '면제 (2천원 미만)' : fmtFull(fireTax))
+      : '0원 (시가표준액 미입력)';
     highlightRateTable(base);
     highlightFireTable(fireBase, 'house');
 
