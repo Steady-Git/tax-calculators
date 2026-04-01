@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>건축물대장 조회 시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f7f5f0;
+  --surface:  #ffffff;
+  --card:     #faf9f6;
+  --border:   #e5e0d8;
+  --border2:  #d0c8bc;
+  --ink:      #1e1a14;
+  --muted:    #8c7f6e;
+  --muted2:   #b0a494;
+  --accent:   #2d5a27;
+  --accent-l: #edf4ec;
+  --amber:    #92540a;
+  --amber-l:  #fef6ea;
+  --blue:     #1a3a5c;
+  --blue-l:   #eaf1f8;
+  --red:      #8b1e1e;
+  --red-l:    #fdf0f0;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'Noto Sans KR', sans-serif;
+  --r:        6px;
+  --shadow:   0 2px 12px rgba(30,26,20,.07);
+  --shadow-md:0 4px 24px rgba(30,26,20,.10);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  min-height:100vh;
+  font-size:14px;
+  line-height:1.6;
+}
+
+/* subtle paper grain */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.025'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;
+}
+
+.page{max-width:1040px;margin:0 auto;padding:44px 22px 100px;position:relative;z-index:1;}
+
+/* ── HEADER ── */
+.site-header{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  border-bottom:2px solid var(--ink);
+  padding-bottom:18px;margin-bottom:36px;gap:12px;flex-wrap:wrap;
+}
+.site-header h1{
+  font-size:24px;font-weight:700;letter-spacing:-.5px;
+  display:flex;align-items:center;gap:10px;
+}
+.site-header h1 span{font-size:26px;}
+.header-meta{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right;line-height:1.8;}
+
+/* ── SEARCH CARD ── */
+.search-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:24px;
+  box-shadow:var(--shadow);
+  margin-bottom:20px;
+}
+.field-label{
+  font-family:var(--mono);font-size:10px;
+  color:var(--muted);letter-spacing:1px;
+  margin-bottom:8px;
+}
+.search-row{display:flex;gap:8px;}
+.search-input{
+  flex:1;
+  border:1.5px solid var(--border);
+  border-radius:var(--r);
+  padding:12px 16px;
+  font-family:var(--sans);font-size:15px;
+  background:var(--card);
+  color:var(--ink);
+  outline:none;
+  transition:border-color .15s;
+}
+.search-input:focus{border-color:var(--accent);}
+.search-input::placeholder{color:var(--muted2);}
+
+.btn{
+  padding:11px 20px;border-radius:var(--r);
+  font-family:var(--sans);font-size:13px;font-weight:600;
+  cursor:pointer;border:1.5px solid transparent;
+  transition:all .15s;display:flex;align-items:center;gap:6px;
+  white-space:nowrap;
+}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.btn-primary:hover{background:#244820;}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+.btn-ghost{background:transparent;color:var(--muted);border-color:var(--border2);}
+.btn-ghost:hover{border-color:var(--ink);color:var(--ink);}
+
+/* address results */
+.addr-results{margin-top:12px;display:flex;flex-direction:column;gap:6px;}
+.addr-item{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:12px 14px;
+  cursor:pointer;transition:all .15s;
+  display:flex;gap:10px;align-items:flex-start;
+}
+.addr-item:hover{border-color:var(--accent);background:var(--accent-l);}
+.addr-type{
+  flex-shrink:0;margin-top:2px;
+  font-size:10px;font-family:var(--mono);
+  background:var(--accent-l);color:var(--accent);
+  border-radius:3px;padding:2px 7px;
+}
+.addr-road{font-size:13px;font-weight:500;line-height:1.4;}
+.addr-road b{color:var(--accent);}
+.addr-jibun{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* selected chip */
+.addr-chip{
+  display:flex;align-items:center;gap:10px;
+  background:var(--accent-l);border:1.5px solid rgba(45,90,39,.25);
+  border-radius:var(--r);padding:10px 16px;
+  font-size:13px;margin-bottom:18px;
+  animation:fadeUp .25s ease;
+}
+.addr-chip .chip-label{color:var(--muted);font-family:var(--mono);font-size:11px;}
+.addr-chip .chip-addr{color:var(--accent);font-weight:600;}
+
+/* ── TABS ── */
+.tabs{
+  display:flex;gap:0;
+  border-bottom:2px solid var(--border);
+  margin-bottom:20px;flex-wrap:wrap;
+}
+.tab{
+  padding:10px 18px;
+  font-size:12px;font-weight:500;font-family:var(--sans);
+  color:var(--muted);cursor:pointer;
+  border:none;border-bottom:2px solid transparent;
+  background:transparent;margin-bottom:-2px;
+  transition:all .15s;white-space:nowrap;
+}
+.tab:hover{color:var(--ink);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700;}
+
+/* ── PANELS ── */
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* ── RESULT CARDS ── */
+.result-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;
+  margin-bottom:14px;box-shadow:var(--shadow);
+  animation:fadeUp .3s ease;
+}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(6px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+.rc-head{
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:14px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;
+}
+.rc-head-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.rc-body{padding:22px;}
+
+/* kv grid */
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;}
+.kv-item{}
+.kv-label{font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.5px;margin-bottom:4px;}
+.kv-val{font-size:14px;font-weight:500;}
+.kv-val.accent{color:var(--accent);font-size:18px;font-weight:700;}
+.kv-val.mono{font-family:var(--mono);font-size:13px;}
+
+/* tags */
+.tag{
+  display:inline-flex;align-items:center;
+  padding:3px 10px;border-radius:20px;
+  font-size:11px;font-weight:600;
+}
+.tag-g{background:var(--accent-l);color:var(--accent);}
+.tag-a{background:var(--amber-l);color:var(--amber);}
+.tag-b{background:var(--blue-l);color:var(--blue);}
+.tag-r{background:var(--red-l);color:var(--red);}
+
+/* summary bar */
+.summary-bar{
+  display:flex;gap:12px;flex-wrap:wrap;
+  margin-bottom:20px;
+}
+.summary-item{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px 18px;
+  flex:1;min-width:130px;box-shadow:var(--shadow);
+  animation:fadeUp .3s ease;
+}
+.summary-item .s-label{font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:6px;}
+.summary-item .s-val{font-size:20px;font-weight:700;color:var(--accent);}
+.summary-item .s-unit{font-size:12px;color:var(--muted);font-weight:400;margin-left:2px;}
+
+/* table */
+.tbl-wrap{overflow-x:auto;}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+table.tbl th{
+  background:var(--card);padding:10px 14px;text-align:left;
+  font-size:11px;font-family:var(--mono);color:var(--muted);
+  border-bottom:1.5px solid var(--border);white-space:nowrap;
+}
+table.tbl td{
+  padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;
+}
+table.tbl tr:last-child td{border-bottom:none;}
+table.tbl tr:hover td{background:var(--card);}
+.tdmono{font-family:var(--mono);font-size:12px;}
+
+/* divider */
+.divider{height:1px;background:var(--border);margin:18px 0;}
+
+/* empty / loading / error */
+.loading{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:60px 20px;gap:14px;
+  color:var(--muted);font-size:13px;font-family:var(--mono);
+}
+.spinner{
+  width:28px;height:28px;
+  border:2px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty .ei{font-size:36px;margin-bottom:12px;}
+.empty p{font-size:13px;line-height:1.8;}
+.err-box{
+  background:var(--red-l);border:1.5px solid rgba(139,30,30,.2);
+  border-radius:var(--r);padding:16px 18px;
+  color:var(--red);font-size:13px;
+  display:flex;gap:10px;align-items:flex-start;
+  margin-top:12px;
+}
+
+/* start state */
+.start-hint{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:48px 24px;text-align:center;
+  color:var(--muted);box-shadow:var(--shadow);
+}
+.start-hint .si{font-size:44px;margin-bottom:16px;}
+.start-hint p{font-size:14px;line-height:1.9;}
+.start-hint b{color:var(--ink);}
+
+@media(max-width:600px){
+  .search-row{flex-wrap:wrap;}
+  .tabs{gap:0;}
+  .tab{padding:9px 12px;font-size:11px;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <header class="site-header">
+    <h1><span>🏛</span> 건축물대장 조회 시스템</h1>
+    <div class="header-meta">
+      국토교통부 건축HUB API<br>
+      도로명주소 검색 API (행정안전부)
+    </div>
+  </header>
+
+  <!-- Search -->
+  <div class="search-card">
+    <div class="field-label">// 주소 검색 — 도로명 또는 지번 입력</div>
+    <div class="search-row">
+      <input class="search-input" id="addrInput"
+        placeholder="예: 서울 강남구 테헤란로 152  또는  서울 강남구 역삼동 737"
+        onkeydown="if(event.key==='Enter') searchAddr()">
+      <button class="btn btn-primary" id="searchBtn" onclick="searchAddr()">🔍 검색</button>
+      <button class="btn btn-ghost" onclick="resetAll()">↺ 초기화</button>
+    </div>
+    <div id="addrResults"></div>
+  </div>
+
+  <!-- Selected address chip -->
+  <div id="addrChip" style="display:none"></div>
+
+  <!-- Tabs + panels -->
+  <div id="mainArea">
+    <div class="start-hint">
+      <div class="si">🗂</div>
+      <p>
+        위에서 <b>주소를 검색</b>하고 선택하면<br>
+        건축물대장 정보를 조회합니다.<br><br>
+        <span style="font-size:12px;opacity:.7">표제부 · 총괄표제부 · 층별개요 · 전유공용면적 · 지역지구구역</span>
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════ */
+const JUSO_KEY   = "U01TX0FVVEgyMDI2MDQwMTEwMjQxNTExNzgzMzQ=";
+const BLD_KEY    = "dc8294cd0177c5d51b45be29652fb691c4b18e055f22c87b0967ca1a78c7df0a";
+const BLD_BASE   = "https://apis.data.go.kr/1613000/BldRgstHubService";
+const JUSO_BASE  = "https://business.juso.go.kr/addrlink/addrLinkApi.do";
+
+let current = null;   // selected address info
+let cache   = {};     // panel cache
+
+/* ═══════════════════════════════════════
+   ADDRESS SEARCH
+═══════════════════════════════════════ */
+async function searchAddr() {
+  const q = document.getElementById('addrInput').value.trim();
+  if (!q) { alert('주소를 입력해주세요.'); return; }
+
+  const el = document.getElementById('addrResults');
+  el.innerHTML = `<div style="padding:12px;font-family:var(--mono);font-size:12px;color:var(--muted)">⟳ 검색 중...</div>`;
+
+  try {
+    const url = `${JUSO_BASE}?confmKey=${JUSO_KEY}&currentPage=1&countPerPage=10&keyword=${encodeURIComponent(q)}&resultType=json`;
+    const res  = await fetch(url);
+    const json = await res.json();
+    const list = json?.results?.juso ?? [];
+
+    if (!list.length) {
+      el.innerHTML = `<div style="padding:12px;color:var(--muted);font-size:13px">검색 결과가 없습니다.</div>`;
+      return;
+    }
+
+    const html = list.map(j => {
+      const isApt = j.bdKdcd === "1";
+      const info  = JSON.stringify({
+        sigunguCd : j.admCd.slice(0,5),
+        bjdongCd  : j.admCd.slice(5,10),
+        platGbCd  : j.mtYn === "1" ? "1" : "0",
+        bun       : j.lnbrMnnm.padStart(4,'0'),
+        ji        : j.lnbrSlno.padStart(4,'0'),
+        road      : j.roadAddr,
+        jibun     : j.jibunAddr,
+        bdNm      : j.bdNm || '',
+      });
+      const highlight = q => q.replace(
+        new RegExp(document.getElementById('addrInput').value.trim().split(' ').join('|'), 'gi'),
+        m => `<b>${m}</b>`
+      );
+      return `<div class="addr-item" onclick='pick(${info})'>
+        <span class="addr-type">${isApt ? '공동주택' : '일반건물'}</span>
+        <div>
+          <div class="addr-road">${highlight(j.roadAddr)}${j.bdNm ? ` <span style="color:var(--amber)">(${j.bdNm})</span>` : ''}</div>
+          <div class="addr-jibun">지번: ${j.jibunAddr}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `<div class="addr-results">${html}</div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="err-box">⚠️ 주소 검색 오류: ${e.message}</div>`;
+  }
+}
+
+/* ═══════════════════════════════════════
+   ADDRESS SELECTED → RENDER UI
+═══════════════════════════════════════ */
+function pick(info) {
+  current = info;
+  cache   = {};
+
+  document.getElementById('addrInput').value = info.road;
+  document.getElementById('addrResults').innerHTML = '';
+
+  // chip
+  const chip = document.getElementById('addrChip');
+  chip.style.display = 'flex';
+  chip.className = 'addr-chip';
+  chip.innerHTML = `<span>📍</span>
+    <div>
+      <span class="chip-label">선택된 주소&nbsp;&nbsp;</span>
+      <span class="chip-addr">${info.road}</span>
+      ${info.bdNm ? `<span style="color:var(--amber);margin-left:6px;font-size:12px">(${info.bdNm})</span>` : ''}
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--mono)">지번: ${info.jibun} · 시군구 ${info.sigunguCd} · 법정동 ${info.bjdongCd} · ${info.bun}-${info.ji}</div>
+    </div>`;
+
+  // build tabs + panels
+  document.getElementById('mainArea').innerHTML = `
+    <div class="tabs">
+      <button class="tab active" id="tab-title"  onclick="sw('title')">📋 표제부</button>
+      <button class="tab"        id="tab-recap"  onclick="sw('recap')">🏗 총괄표제부</button>
+      <button class="tab"        id="tab-floor"  onclick="sw('floor')">📐 층별개요</button>
+      <button class="tab"        id="tab-area"   onclick="sw('area')">📏 전유공용면적</button>
+      <button class="tab"        id="tab-land"   onclick="sw('land')">🗺 지역지구구역</button>
+    </div>
+    <div id="panel-title" class="panel active"></div>
+    <div id="panel-recap" class="panel"></div>
+    <div id="panel-floor" class="panel"></div>
+    <div id="panel-area"  class="panel"></div>
+    <div id="panel-land"  class="panel"></div>
+  `;
+
+  load('title');
+}
+
+/* ═══════════════════════════════════════
+   TAB SWITCH
+═══════════════════════════════════════ */
+function sw(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  load(name);
+}
+
+/* ═══════════════════════════════════════
+   LOAD PANEL (fetch + render)
+═══════════════════════════════════════ */
+const OPS = {
+  title : 'getBrTitleInfo',
+  recap : 'getBrRecapTitleInfo',
+  floor : 'getBrFlrOulnInfo',
+  area  : 'getBrExposPubuseAreaInfo',
+  land  : 'getBrJijiguInfo',
+};
+
+async function load(name) {
+  if (cache[name]) return;
+  const el = document.getElementById('panel-'+name);
+  el.innerHTML = `<div class="loading"><div class="spinner"></div><span>${OPS[name]} 조회 중...</span></div>`;
+
+  try {
+    const { sigunguCd, bjdongCd, platGbCd, bun, ji } = current;
+    const p = new URLSearchParams({
+      serviceKey: BLD_KEY,
+      sigunguCd, bjdongCd, platGbCd, bun, ji,
+      _type: 'json', numOfRows: 200, pageNo: 1,
+    });
+    const res  = await fetch(`${BLD_BASE}/${OPS[name]}?${p}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    const body = json?.response?.body;
+    if (!body) throw new Error('응답 형식 오류');
+
+    const total = Number(body.totalCount ?? 0);
+    if (total === 0) {
+      el.innerHTML = `<div class="empty"><div class="ei">📭</div><p>해당 주소에 <b>${name}</b> 정보가 없습니다.<br><span style="font-size:12px">지번/필지 구분에 따라 데이터가 없을 수 있습니다.</span></p></div>`;
+      cache[name] = true;
+      return;
+    }
+
+    const items = [].concat(body.items?.item ?? []);
+    cache[name] = true;
+    el.innerHTML = '';
+    ({ title: rTitle, recap: rRecap, floor: rFloor, area: rArea, land: rLand })[name](el, items);
+
+  } catch(e) {
+    el.innerHTML = `<div class="err-box">⚠️ <div><b>오류 발생</b><br>${e.message}</div></div>`;
+  }
+}
+
+/* ═══════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════ */
+const v   = x => (x == null || x === '') ? '—' : x;
+const dt  = d => d ? String(d).replace(/(\d{4})(\d{2})(\d{2})/, '$1.$2.$3') : '—';
+const num = n => n != null && n !== '' ? Number(n).toLocaleString() : '—';
+
+function card(headHTML, bodyHTML) {
+  const d = document.createElement('div');
+  d.className = 'result-card';
+  d.innerHTML = `<div class="rc-head">${headHTML}</div><div class="rc-body">${bodyHTML}</div>`;
+  return d;
+}
+
+function kv(pairs) {
+  return `<div class="kv">${pairs.map(([l,val,cls='']) =>
+    `<div class="kv-item"><div class="kv-label">${l}</div><div class="kv-val ${cls}">${val}</div></div>`
+  ).join('')}</div>`;
+}
+
+/* ═══════════════════════════════════════
+   RENDERERS
+═══════════════════════════════════════ */
+function rTitle(el, items) {
+  // summary bar
+  if (items.length > 0) {
+    const it = items[0];
+    el.appendChild(summaryBar([
+      ['대지면적', num(it.platArea), '㎡'],
+      ['건축면적', num(it.archArea), '㎡'],
+      ['연면적',   num(it.totArea),  '㎡'],
+      ['건폐율',   v(it.bcRat),      '%'],
+      ['용적률',   v(it.vlRat),      '%'],
+      ['총주차',   v(it.totPkngCnt), '대'],
+    ]));
+  }
+
+  items.forEach((it, i) => {
+    const head = `
+      <div class="rc-head-title">
+        🏠 ${it.bldNm ? it.bldNm : `동 ${i+1}`}
+        <span class="tag tag-g">${v(it.mainPurpsCdNm)}</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="tag tag-b">${v(it.strctCdNm)}</span>
+        ${it.roofCdNm ? `<span class="tag tag-a">${it.roofCdNm}</span>` : ''}
+      </div>`;
+    const body = kv([
+      ['대지위치',      v(it.platPlc)],
+      ['도로명주소',    v(it.newPlatPlc)],
+      ['허가일',        dt(it.pmsDay)],
+      ['착공일',        dt(it.stcnsDay)],
+      ['사용승인일',    dt(it.useAprDay)],
+      ['지상층',        `${v(it.grndFlrCnt)} 층`],
+      ['지하층',        `${v(it.ugrndFlrCnt)} 층`],
+      ['승강기(승용)',  `${v(it.rideUseElvtCnt)} 대`],
+      ['세대/가구수',   `${v(it.hhldCnt)} / ${v(it.fmlyCnt)}`],
+      ['에너지효율등급',v(it.engrGrade)],
+      ['친환경등급',    v(it.gnBldGrade)],
+      ['EPI점수',       v(it.epiScore)],
+    ]);
+    el.appendChild(card(head, body));
+  });
+}
+
+function rRecap(el, items) {
+  items.forEach(it => {
+    const head = `
+      <div class="rc-head-title">🏗 총괄표제부 <span class="tag tag-a">${v(it.mainPurpsCdNm)}</span></div>`;
+    const body = kv([
+      ['건물명',        v(it.bldNm)],
+      ['대지면적',      `${num(it.platArea)} ㎡`],
+      ['건축면적',      `${num(it.archArea)} ㎡`],
+      ['연면적',        `${num(it.totArea)} ㎡`, 'accent'],
+      ['건폐율',        `${v(it.bcRat)} %`],
+      ['용적률',        `${v(it.vlRat)} %`],
+      ['세대수',        `${num(it.hhldCnt)} 세대`],
+      ['가구수',        `${num(it.fmlyCnt)} 가구`],
+      ['주건축물수',    `${v(it.mainBldCnt)} 동`],
+      ['부속건축물수',  `${v(it.atchBldCnt)} 동`],
+      ['총주차수',      `${v(it.totPkngCnt)} 대`],
+      ['사용승인일',    dt(it.useAprDay)],
+      ['지능형건축등급',v(it.itgBldGrade)],
+      ['친환경등급',    v(it.gnBldGrade)],
+    ]);
+    el.appendChild(card(head, body));
+  });
+}
+
+function rFloor(el, items) {
+  const head = `
+    <div class="rc-head-title">📐 층별개요</div>
+    <span class="tag tag-b">총 ${items.length} 건</span>`;
+  const rows = items.map(it => `<tr>
+    <td>${v(it.flrNoNm)}</td>
+    <td>${v(it.mainPurpsCdNm)}</td>
+    <td>${v(it.strctCdNm)}</td>
+    <td class="tdmono" style="text-align:right">${num(it.area)}</td>
+  </tr>`).join('');
+  const body = `<div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>층</th><th>주용도</th><th>구조</th><th style="text-align:right">면적(㎡)</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+  el.appendChild(card(head, body));
+}
+
+function rArea(el, items) {
+  const head = `
+    <div class="rc-head-title">📏 전유·공용면적</div>
+    <span class="tag tag-g">총 ${items.length} 건</span>`;
+  const rows = items.map(it => {
+    const gb = it.exposPubuseCd === '1' ? '<span class="tag tag-b" style="font-size:10px">전유</span>'
+             : it.exposPubuseCd === '2' ? '<span class="tag tag-a" style="font-size:10px">공용</span>' : v(it.exposPubuseCd);
+    return `<tr>
+      <td>${v(it.dongNm)}</td>
+      <td>${v(it.hoNm)}</td>
+      <td>${v(it.flrNoNm)}</td>
+      <td>${gb}</td>
+      <td>${v(it.mainPurpsCdNm)}</td>
+      <td class="tdmono" style="text-align:right">${num(it.area)}</td>
+    </tr>`;
+  }).join('');
+  const body = `<div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>동</th><th>호</th><th>층</th><th>구분</th><th>용도</th><th style="text-align:right">면적(㎡)</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+  el.appendChild(card(head, body));
+}
+
+function rLand(el, items) {
+  const head = `
+    <div class="rc-head-title">🗺 지역·지구·구역</div>
+    <span class="tag tag-a">총 ${items.length} 건</span>`;
+  const rows = items.map(it => `<tr>
+    <td>${v(it.jijiguGbCdNm)}</td>
+    <td><b>${v(it.jijiguCdNm)}</b></td>
+  </tr>`).join('');
+  const body = `<div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>구분</th><th>지역·지구·구역명</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+  el.appendChild(card(head, body));
+}
+
+/* summary bar helper */
+function summaryBar(items) {
+  const wrap = document.createElement('div');
+  wrap.className = 'summary-bar';
+  wrap.innerHTML = items.map(([l, val, unit]) => `
+    <div class="summary-item">
+      <div class="s-label">${l}</div>
+      <div class="s-val">${val}<span class="s-unit">${unit}</span></div>
+    </div>`).join('');
+  return wrap;
+}
+
+/* reset */
+function resetAll() {
+  current = null; cache = {};
+  document.getElementById('addrInput').value = '';
+  document.getElementById('addrResults').innerHTML = '';
+  document.getElementById('addrChip').style.display = 'none';
+  document.getElementById('mainArea').innerHTML = `
+    <div class="start-hint">
+      <div class="si">🗂</div>
+      <p>위에서 <b>주소를 검색</b>하고 선택하면<br>건축물대장 정보를 조회합니다.<br><br>
+      <span style="font-size:12px;opacity:.7">표제부 · 총괄표제부 · 층별개요 · 전유공용면적 · 지역지구구역</span></p>
+    </div>`;
+}
+</script>
+</body>
+</html>

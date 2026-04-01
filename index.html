@@ -473,6 +473,17 @@ nav { padding: 0.5rem 0; flex: 1; }
         </div>
       </div>
 
+      <!-- 05 기타 유용한 자료 -->
+      <div class="nav-section">
+        <button class="nav-section-btn" onclick="toggleSection(this)">
+          <span class="nav-num">05</span>기타 유용한 자료
+          <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="nav-items">
+          <button class="nav-item" onclick="openCalc('building.html','건축물대장 조회',this)"><span class="nav-dot"></span>건축물대장 조회</button>
+        </div>
+      </div>
+
     </nav>
 
     <div class="sidebar-footer">
@@ -582,6 +593,18 @@ nav { padding: 0.5rem 0; flex: 1; }
             <span class="card-tag tag-blue">인사노무</span>
             <span class="card-name">실수령액 계산</span>
             <span class="card-desc">세전 급여 → 실수령액</span>
+            <span class="card-arrow">열기 →</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-section">
+        <div class="home-section-title">기타 유용한 자료</div>
+        <div class="card-grid">
+          <div class="card" onclick="openCalc('building.html','건축물대장 조회',null)">
+            <span class="card-tag tag-re">부동산</span>
+            <span class="card-name">건축물대장 조회</span>
+            <span class="card-desc">건물 현황 및 용도 확인</span>
             <span class="card-arrow">열기 →</span>
           </div>
         </div>
