@@ -456,6 +456,7 @@ nav { padding: 0.5rem 0; flex: 1; }
           <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="nav-items">
+          <button class="nav-item" onclick="openCalc('biz.html','사업자등록 조회',this)"><span class="nav-dot"></span>사업자등록 조회</button>
           <button class="nav-item" onclick="openCalc('obligation.html','기장의무 · 경비율 판단기',this)"><span class="nav-dot"></span>기장의무</button>
         </div>
       </div>
@@ -559,6 +560,12 @@ nav { padding: 0.5rem 0; flex: 1; }
       <div class="home-section">
         <div class="home-section-title">사업자 · 인사노무</div>
         <div class="card-grid">
+          <div class="card" onclick="openCalc('biz.html','사업자등록 조회',null)">
+            <span class="card-tag tag-green">사업자</span>
+            <span class="card-name">사업자등록 조회</span>
+            <span class="card-desc">사업자 등록 정보 확인</span>
+            <span class="card-arrow">열기 →</span>
+          </div>
           <div class="card" onclick="openCalc('obligation.html','기장의무 · 경비율 판단기',null)">
             <span class="card-tag tag-green">사업자</span>
             <span class="card-name">기장의무</span>
