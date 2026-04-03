@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>지도 검색</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- vworld 2D 지도 API 2.0 -->
+<script type="text/javascript"
+  src="https://map.vworld.kr/js/vworldMapInit.js.do?version=2.0&apiKey=C1D1BEFA-FB79-32F1-B02B-0FCC0C4819D6&domain=taxzip.kr/map">
+</script>
+<style>
+:root {
+  --bg:#f7f4ef; --surf:#fff; --card:#faf8f4; --border:#e6dfd3; --border2:#cfc8ba;
+  --ink:#1a1612; --muted:#7a6e5e; --muted2:#a89d8c;
+  --blue:#1a4f8a; --blue-l:#eaf1f9;
+  --green:#1a6b3e; --green-l:#eaf4ef;
+  --amber:#8a5000; --amber-l:#fef6e8;
+  --red:#8a1a1a; --red-l:#faeaea;
+  --mono:'IBM Plex Mono',monospace; --sans:'Noto Sans KR',sans-serif;
+  --r:8px; --sh:0 2px 16px rgba(26,22,18,.10);
+  --panel:340px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:var(--sans);font-size:14px;color:var(--ink);background:var(--bg);}
+
+/* ── 레이아웃: 왼쪽 패널 + 오른쪽 지도 ── */
+.layout{display:flex;height:100vh;}
+
+/* 패널 */
+.panel{
+  width:var(--panel);flex-shrink:0;
+  background:var(--surf);
+  border-right:1.5px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  z-index:10;
+  box-shadow:2px 0 12px rgba(26,22,18,.08);
+}
+.panel-header{
+  padding:20px 18px 14px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.panel-header h1{font-size:18px;font-weight:700;letter-spacing:-.4px;display:flex;align-items:center;gap:8px;}
+.panel-header p{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:3px;}
+
+/* 검색 */
+.search-wrap{padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.search-row{display:flex;gap:6px;}
+.sinput{
+  flex:1;border:1.5px solid var(--border);border-radius:var(--r);
+  padding:10px 12px;font-family:var(--sans);font-size:14px;
+  background:var(--card);color:var(--ink);outline:none;
+  transition:border-color .15s;
+}
+.sinput:focus{border-color:var(--blue);}
+.sinput::placeholder{color:var(--muted2);}
+.sbtn{
+  padding:10px 14px;border-radius:var(--r);background:var(--blue);color:#fff;
+  border:none;font-family:var(--sans);font-size:13px;font-weight:600;
+  cursor:pointer;transition:background .15s;white-space:nowrap;
+}
+.sbtn:hover{background:#143d6e;}
+.sbtn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* 레이어 토글 */
+.layer-wrap{padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;gap:6px;flex-wrap:wrap;}
+.lbtn{
+  padding:5px 12px;border-radius:20px;border:1.5px solid var(--border2);
+  background:transparent;color:var(--muted);font-family:var(--sans);font-size:11px;
+  font-weight:500;cursor:pointer;transition:all .15s;
+}
+.lbtn:hover{border-color:var(--blue);color:var(--blue);}
+.lbtn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+
+/* 결과 리스트 */
+.result-list{flex:1;overflow-y:auto;padding:10px 12px;}
+.result-list::-webkit-scrollbar{width:4px;}
+.result-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+.ritem{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:11px 13px;
+  cursor:pointer;transition:all .15s;
+  margin-bottom:6px;
+}
+.ritem:hover{border-color:var(--blue);background:var(--blue-l);}
+.ritem.active{border-color:var(--blue);background:var(--blue-l);}
+.ritem-badge{font-size:10px;font-family:var(--mono);background:var(--blue-l);color:var(--blue);border-radius:3px;padding:1px 6px;display:inline-block;margin-bottom:5px;}
+.ritem-road{font-size:13px;font-weight:600;line-height:1.4;margin-bottom:3px;}
+.ritem-jibun{font-size:11px;color:var(--muted);}
+
+.empty-msg{text-align:center;padding:32px 16px;color:var(--muted);}
+.empty-msg .ei{font-size:32px;margin-bottom:10px;}
+.empty-msg p{font-size:12px;line-height:1.9;}
+
+.errbox{background:var(--red-l);border:1.5px solid rgba(138,26,26,.2);border-radius:var(--r);padding:11px 13px;color:var(--red);font-size:12px;margin-bottom:6px;}
+
+/* 선택된 장소 정보 */
+.place-info{
+  margin:0 12px 10px;
+  background:var(--green-l);border:1.5px solid rgba(26,107,62,.2);
+  border-radius:var(--r);padding:12px 14px;
+  animation:fu .2s ease;
+}
+.place-info-addr{font-size:13px;font-weight:600;color:var(--green);line-height:1.5;}
+.place-info-jibun{font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono);}
+
+/* 지도 */
+.map-wrap{flex:1;position:relative;overflow:hidden;}
+#map{width:100%;height:100%;}
+
+/* 지도 위 마커 팝업 */
+.map-popup{
+  position:absolute;background:var(--surf);
+  border:1.5px solid var(--border);border-radius:10px;
+  padding:12px 14px;box-shadow:var(--sh);
+  font-size:13px;min-width:180px;
+  pointer-events:none;display:none;
+  z-index:100;
+}
+.map-popup-addr{font-weight:600;color:var(--ink);margin-bottom:4px;}
+.map-popup-coord{font-size:11px;color:var(--muted);font-family:var(--mono);}
+
+/* 줌 인포 */
+.zoom-info{
+  position:absolute;bottom:16px;right:16px;
+  background:rgba(255,255,255,.9);
+  border:1px solid var(--border);border-radius:var(--r);
+  padding:6px 12px;font-size:11px;color:var(--muted);
+  font-family:var(--mono);
+  backdrop-filter:blur(4px);
+}
+
+/* 로딩 */
+.loading-overlay{
+  position:absolute;inset:0;background:rgba(247,244,239,.8);
+  display:flex;align-items:center;justify-content:center;
+  z-index:50;display:none;
+}
+.spinner{width:28px;height:28px;border:2.5px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
+
+@keyframes fu{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 모바일 */
+@media(max-width:640px){
+  .layout{flex-direction:column;}
+  .panel{width:100%;height:48%;border-right:none;border-bottom:1.5px solid var(--border);}
+  .map-wrap{height:52%;}
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ── 왼쪽 패널 ── -->
+  <div class="panel">
+    <div class="panel-header">
+      <h1>🗺 지도 검색</h1>
+      <p>vworld 2D API · taxzip.kr/map</p>
+    </div>
+
+    <div class="search-wrap">
+      <div class="search-row">
+        <input class="sinput" id="addrInput"
+          placeholder="주소 또는 건물명 입력"
+          onkeydown="if(event.key==='Enter') doSearch()">
+        <button class="sbtn" id="sbtn" onclick="doSearch()">검색</button>
+      </div>
+    </div>
+
+    <!-- 지도 레이어 선택 -->
+    <div class="layer-wrap">
+      <button class="lbtn active" onclick="setLayer(this,'Base')">일반</button>
+      <button class="lbtn" onclick="setLayer(this,'Satellite')">위성</button>
+      <button class="lbtn" onclick="setLayer(this,'Hybrid')">위성+레이어</button>
+      <button class="lbtn" onclick="setLayer(this,'white')">화이트</button>
+    </div>
+
+    <!-- 선택된 장소 정보 -->
+    <div id="placeInfo" style="display:none"></div>
+
+    <!-- 검색 결과 -->
+    <div class="result-list" id="resultList">
+      <div class="empty-msg">
+        <div class="ei">🔍</div>
+        <p>주소나 건물명을 검색하면<br>지도에서 위치를 확인할 수 있습니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 지도 영역 ── -->
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="loading-overlay" id="mapLoading"><div class="spinner"></div></div>
+    <div class="zoom-info" id="zoomInfo">줌: —</div>
+  </div>
+
+</div>
+
+<script>
+/* ══════════════════════════════
+   CONFIG
+══════════════════════════════ */
+const JUSO_KEY  = "U01TX0FVVEgyMDI2MDQwMTEwMjQxNTExNzgzMzQ=";
+const VW_KEY    = "C1D1BEFA-FB79-32F1-B02B-0FCC0C4819D6";
+const VW_DOMAIN = "taxzip.kr/map";
+
+let vmap = null;         // vworld 지도 객체
+let markerLayer = null;  // 마커 레이어
+let currentLayer = 'Base';
+let selectedIdx = -1;
+
+/* ══════════════════════════════
+   지도 초기화 (vworld 2D API 2.0)
+══════════════════════════════ */
+function initMap() {
+  vmap = new vw.Map();
+
+  const options = {
+    mapId: "map",
+    zoom: 7,
+    initExtent: {
+      minX: 124.0,
+      minY: 33.0,
+      maxX: 132.0,
+      maxY: 39.0,
+    },
+    logo: false,
+    control: { zoom: true, scale: false, mouseposition: false, rotate: false },
+  };
+
+  vmap.setOption(options);
+  vmap.setMapId("map");
+
+  // 줌 변경 이벤트
+  vmap.on('change:resolution', function() {
+    const z = vmap.getView().getZoom();
+    document.getElementById('zoomInfo').textContent = `줌: ${z ? z.toFixed(1) : '—'}`;
+  });
+
+  // 마커 레이어 초기화
+  markerLayer = new ol.layer.Vector({
+    source: new ol.source.Vector(),
+    zIndex: 99,
+  });
+  vmap.addLayer(markerLayer);
+}
+
+/* ══════════════════════════════
+   레이어 전환
+══════════════════════════════ */
+function setLayer(btn, layerName) {
+  document.querySelectorAll('.lbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentLayer = layerName;
+
+  if (!vmap) return;
+
+  // 배경 레이어 교체
+  vmap.getLayers().forEach(layer => {
+    if (layer.get('type') === 'base') vmap.removeLayer(layer);
+  });
+
+  const baseLayer = new vw.layer.Base(layerName);
+  baseLayer.set('type', 'base');
+  vmap.getLayers().insertAt(0, baseLayer);
+}
+
+/* ══════════════════════════════
+   주소 검색
+══════════════════════════════ */
+async function doSearch() {
+  const q = document.getElementById('addrInput').value.trim();
+  if (!q) { alert('검색어를 입력하세요.'); return; }
+
+  const btn = document.getElementById('sbtn');
+  btn.disabled = true; btn.textContent = '검색 중...';
+  selectedIdx = -1;
+  document.getElementById('placeInfo').style.display = 'none';
+
+  try {
+    // 1) juso.go.kr 주소 검색
+    const res = await fetch(
+      `https://business.juso.go.kr/addrlink/addrLinkApi.do?confmKey=${JUSO_KEY}&currentPage=1&countPerPage=10&keyword=${encodeURIComponent(q)}&resultType=json`
+    );
+    const j = await res.json();
+    const list = j?.results?.juso ?? [];
+
+    if (!list.length) {
+      // 2) 결과 없으면 vworld 검색 API로 시도
+      await searchVworld(q);
+      return;
+    }
+
+    renderResults(list);
+    // 첫 번째 결과로 지도 이동
+    if (list.length > 0) selectAddr(list[0], 0);
+
+  } catch(e) {
+    document.getElementById('resultList').innerHTML =
+      `<div class="errbox">⚠️ 검색 오류: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '검색';
+  }
+}
+
+/* ══════════════════════════════
+   vworld 검색 API (건물명 등 fallback)
+══════════════════════════════ */
+async function searchVworld(q) {
+  try {
+    const p = new URLSearchParams({
+      service: 'search',
+      request: 'search',
+      key: VW_KEY,
+      domain: VW_DOMAIN,
+      query: q,
+      type: 'place',
+      format: 'json',
+      size: 10,
+      page: 1,
+      crs: 'EPSG:4326',
+    });
+    const res = await fetch(`https://api.vworld.kr/req/search?${p}`);
+    const json = await res.json();
+    const items = json?.response?.result?.items ?? [];
+
+    if (!items.length) {
+      document.getElementById('resultList').innerHTML =
+        `<div class="empty-msg"><div class="ei">📭</div><p>"${q}"에 대한 검색 결과가 없습니다.</p></div>`;
+      return;
+    }
+
+    renderVworldResults(items);
+    if (items.length > 0) selectVworld(items[0], 0);
+  } catch(e) {
+    document.getElementById('resultList').innerHTML =
+      `<div class="errbox">⚠️ ${e.message}</div>`;
+  }
+}
+
+/* ══════════════════════════════
+   주소 결과 렌더링 (juso)
+══════════════════════════════ */
+let currentList = [];
+let currentType = 'juso';
+
+function renderResults(list) {
+  currentList = list;
+  currentType = 'juso';
+  const el = document.getElementById('resultList');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-msg"><div class="ei">📭</div><p>검색 결과가 없습니다.</p></div>`;
+    return;
+  }
+  el.innerHTML = list.map((x, i) => `
+    <div class="ritem" id="ritem-${i}" onclick="selectAddr(currentList[${i}], ${i})">
+      <div class="ritem-badge">${x.bdKdcd==='1'?'공동':'일반'}</div>
+      <div class="ritem-road">${x.roadAddr}${x.bdNm?` <span style="color:var(--amber)">(${x.bdNm})</span>`:''}</div>
+      <div class="ritem-jibun">지번: ${x.jibunAddr}</div>
+    </div>
+  `).join('');
+}
+
+function renderVworldResults(items) {
+  currentList = items;
+  currentType = 'vworld';
+  const el = document.getElementById('resultList');
+  el.innerHTML = items.map((it, i) => `
+    <div class="ritem" id="ritem-${i}" onclick="selectVworld(currentList[${i}], ${i})">
+      <div class="ritem-badge">장소</div>
+      <div class="ritem-road">${it.title||'—'}</div>
+      <div class="ritem-jibun">${it.address?.parcel||it.address?.road||'—'}</div>
+    </div>
+  `).join('');
+}
+
+/* ══════════════════════════════
+   주소 선택 → 좌표 변환 → 지도 이동
+══════════════════════════════ */
+async function selectAddr(item, idx) {
+  setActiveItem(idx);
+
+  // vworld geocoder API로 좌표 획득
+  try {
+    const p = new URLSearchParams({
+      service: 'address',
+      request: 'getcoord',
+      key: VW_KEY,
+      domain: VW_DOMAIN,
+      address: item.roadAddr || item.jibunAddr,
+      type: 'ROAD',
+      format: 'json',
+      crs: 'EPSG:4326',
+    });
+    const res = await fetch(`https://api.vworld.kr/req/address?${p}`);
+    const json = await res.json();
+
+    let x = parseFloat(json?.response?.result?.point?.x);
+    let y = parseFloat(json?.response?.result?.point?.y);
+
+    // 도로명 실패 시 지번으로 재시도
+    if (!x || !y) {
+      const p2 = new URLSearchParams({
+        service:'address', request:'getcoord', key:VW_KEY, domain:VW_DOMAIN,
+        address: item.jibunAddr, type:'PARCEL', format:'json', crs:'EPSG:4326',
+      });
+      const res2 = await fetch(`https://api.vworld.kr/req/address?${p2}`);
+      const json2 = await res2.json();
+      x = parseFloat(json2?.response?.result?.point?.x);
+      y = parseFloat(json2?.response?.result?.point?.y);
+    }
+
+    if (!x || !y) throw new Error('좌표를 찾을 수 없습니다.');
+
+    moveMap(x, y, item.roadAddr, item.jibunAddr);
+    showPlaceInfo(item.roadAddr, item.jibunAddr, x, y);
+  } catch(e) {
+    document.getElementById('resultList').insertAdjacentHTML('afterbegin',
+      `<div class="errbox">⚠️ ${e.message}</div>`);
+  }
+}
+
+function selectVworld(item, idx) {
+  setActiveItem(idx);
+  const pt = item.point || {};
+  const x = parseFloat(pt.x);
+  const y = parseFloat(pt.y);
+  if (!x || !y) return;
+  const addr = item.address?.parcel || item.address?.road || item.title;
+  moveMap(x, y, item.title, addr);
+  showPlaceInfo(item.title, addr, x, y);
+}
+
+function setActiveItem(idx) {
+  if (selectedIdx >= 0) document.getElementById(`ritem-${selectedIdx}`)?.classList.remove('active');
+  selectedIdx = idx;
+  document.getElementById(`ritem-${idx}`)?.classList.add('active');
+}
+
+/* ══════════════════════════════
+   지도 이동 + 마커 표시
+══════════════════════════════ */
+function moveMap(lon, lat, title, addr) {
+  if (!vmap) return;
+
+  // EPSG:4326 → EPSG:3857 변환 (ol 내장)
+  const coord = ol.proj.fromLonLat([lon, lat]);
+
+  // 마커 초기화 후 추가
+  markerLayer.getSource().clear();
+
+  const iconStyle = new ol.style.Style({
+    image: new ol.style.Icon({
+      anchor: [0.5, 1],
+      src: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="44" viewBox="0 0 32 44">
+          <ellipse cx="16" cy="42" rx="6" ry="2" fill="rgba(0,0,0,.2)"/>
+          <path d="M16 2C9.4 2 4 7.4 4 14c0 9 12 28 12 28s12-19 12-28C28 7.4 22.6 2 16 2z"
+            fill="#1a4f8a" stroke="#fff" stroke-width="1.5"/>
+          <circle cx="16" cy="14" r="5" fill="#fff"/>
+        </svg>`),
+      scale: 1.1,
+    }),
+    text: new ol.style.Text({
+      text: title ? (title.length > 12 ? title.slice(0,12)+'…' : title) : '',
+      offsetY: -50,
+      font: 'bold 12px Noto Sans KR, sans-serif',
+      fill: new ol.style.Fill({ color: '#1a1612' }),
+      stroke: new ol.style.Stroke({ color: '#fff', width: 3 }),
+    }),
+  });
+
+  const marker = new ol.Feature({ geometry: new ol.geom.Point(coord), title, addr });
+  marker.setStyle(iconStyle);
+  markerLayer.getSource().addFeature(marker);
+
+  // 지도 부드럽게 이동
+  vmap.getView().animate({ center: coord, zoom: 17, duration: 600 });
+}
+
+/* ══════════════════════════════
+   선택된 장소 정보 표시 (패널)
+══════════════════════════════ */
+function showPlaceInfo(road, jibun, x, y) {
+  const el = document.getElementById('placeInfo');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="place-info">
+      <div class="place-info-addr">📍 ${road}</div>
+      <div class="place-info-jibun">지번: ${jibun}<br>좌표: ${Number(x).toFixed(6)}, ${Number(y).toFixed(6)}</div>
+    </div>`;
+}
+
+/* ══════════════════════════════
+   페이지 로드 시 지도 초기화
+══════════════════════════════ */
+window.addEventListener('load', () => {
+  // vworld 스크립트 로드 완료 후 초기화
+  if (typeof vw !== 'undefined') {
+    initMap();
+  } else {
+    // 최대 3초 대기
+    let tries = 0;
+    const timer = setInterval(() => {
+      if (typeof vw !== 'undefined') {
+        clearInterval(timer);
+        initMap();
+      } else if (++tries > 30) {
+        clearInterval(timer);
+        document.querySelector('.map-wrap').innerHTML =
+          `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#8a1a1a;font-size:14px;padding:24px;text-align:center;">
+            ⚠️ vworld 지도 API 로드 실패<br><small style="opacity:.7">도메인이 taxzip.kr/map으로 등록되어 있는지 확인하세요.</small>
+          </div>`;
+      }
+    }, 100);
+  }
+});
+</script>
+</body>
+</html>
