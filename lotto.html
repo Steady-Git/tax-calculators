@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>로또 번호 생성기</title>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0f;
+      --surface: #16161a;
+      --surface2: #1e1e24;
+      --border: rgba(255,255,255,0.08);
+      --text: #f0ede8;
+      --muted: #888;
+      --accent: #f5c842;
+
+      --y1: #fde68a; --y2: #f59e0b;
+      --b1: #bfdbfe; --b2: #3b82f6;
+      --r1: #fecaca; --r2: #ef4444;
+      --g1: #d1d5db; --g2: #6b7280;
+      --gr1: #bbf7d0; --gr2: #22c55e;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px 80px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    header h1 {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: var(--accent);
+      text-shadow: 0 0 40px rgba(245,200,66,0.3);
+    }
+
+    header p {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 560px;
+    }
+
+    /* Controls */
+    .controls {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .controls label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      margin-right: auto;
+    }
+
+    .count-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .count-ctrl button {
+      width: 36px; height: 36px;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .count-ctrl button:hover { background: rgba(255,255,255,0.07); }
+
+    .count-ctrl span {
+      width: 36px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1rem;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+
+    /* Tickets */
+    #tickets { display: flex; flex-direction: column; gap: 12px; }
+
+    .empty {
+      text-align: center;
+      padding: 40px 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+    }
+
+    .ticket {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 20px;
+      animation: slideIn 0.3s ease both;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .ticket-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .ticket-label {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 0.85rem;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+    }
+
+    .ticket-hint {
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .balls-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .ball {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      position: relative;
+      transition: transform 0.2s;
+    }
+
+    .ball:hover { transform: scale(1.12); }
+
+    /* 번호별 색상 */
+    .b-y  { background: radial-gradient(circle at 35% 35%, var(--y1), var(--y2)); color: #78350f; }
+    .b-bl { background: radial-gradient(circle at 35% 35%, var(--b1), var(--b2)); color: #1e3a5f; }
+    .b-r  { background: radial-gradient(circle at 35% 35%, var(--r1), var(--r2)); color: #7f1d1d; }
+    .b-gr { background: radial-gradient(circle at 35% 35%, var(--g1), var(--g2)); color: #111; }
+    .b-g  { background: radial-gradient(circle at 35% 35%, var(--gr1), var(--gr2)); color: #14532d; }
+
+    /* 광택 효과 */
+    .ball::after {
+      content: '';
+      position: absolute;
+      top: 6px; left: 8px;
+      width: 12px; height: 7px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 50%;
+      transform: rotate(-30deg);
+    }
+
+    .bonus-sep {
+      color: var(--muted);
+      font-size: 1.1rem;
+      padding: 0 4px;
+    }
+
+    .bonus .ball {
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+      box-shadow: 0 0 24px rgba(245,200,66,0.2);
+    }
+
+    .btn-primary:hover {
+      background: #f0bd1e;
+      box-shadow: 0 0 32px rgba(245,200,66,0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🎱 LOTTO</h1>
+    <p>1 – 45 · 랜덤 번호 생성기</p>
+  </header>
+
+  <div class="container">
+
+    <div class="controls">
+      <label>게임 수 선택</label>
+      <div class="count-ctrl">
+        <button id="dec">−</button>
+        <span id="countVal">5</span>
+        <button id="inc">+</button>
+      </div>
+    </div>
+
+    <div id="tickets">
+      <div class="empty">버튼을 눌러 번호를 생성하세요 ✨</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="genBtn">번호 생성하기</button>
+      <button class="btn btn-secondary" id="clearBtn">초기화</button>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>1–10</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;"></div>11–20</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div>21–30</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6b7280;"></div>31–40</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#22c55e;"></div>41–45</div>
+      <div class="legend-item"><div class="legend-dot" style="border:1.5px solid #f5c842; background:transparent;"></div>보너스</div>
+    </div>
+
+  </div>
+
+  <script>
+    let count = 5;
+    const tickets = [];
+
+    const labels = ['A','B','C','D','E','F','G','H','I','J'];
+
+    function ballClass(n) {
+      if (n <= 10) return 'b-y';
+      if (n <= 20) return 'b-bl';
+      if (n <= 30) return 'b-r';
+      if (n <= 40) return 'b-gr';
+      return 'b-g';
+    }
+
+    function pick() {
+      const pool = Array.from({length: 45}, (_, i) => i + 1);
+      const chosen = [];
+      while (chosen.length < 7) {
+        const i = Math.floor(Math.random() * pool.length);
+        chosen.push(pool.splice(i, 1)[0]);
+      }
+      return {
+        main: chosen.slice(0, 6).sort((a, b) => a - b),
+        bonus: chosen[6]
+      };
+    }
+
+    function ballHTML(n, isBonus) {
+      return `<div class="ball ${ballClass(n)}${isBonus ? ' bonus-ball' : ''}">${n}</div>`;
+    }
+
+    function render() {
+      const el = document.getElementById('tickets');
+      if (!tickets.length) {
+        el.innerHTML = '<div class="empty">버튼을 눌러 번호를 생성하세요 ✨</div>';
+        return;
+      }
+      el.innerHTML = tickets.map((t, i) => `
+        <div class="ticket" style="animation-delay:${i * 0.05}s">
+          <div class="ticket-top">
+            <span class="ticket-label">${labels[i % 10]} 게임</span>
+            <span class="ticket-hint">+ 보너스 번호</span>
+          </div>
+          <div class="balls-row">
+            ${t.main.map(n => ballHTML(n, false)).join('')}
+            <span class="bonus-sep">+</span>
+            <div class="bonus">${ballHTML(t.bonus, true)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('dec').onclick = () => {
+      if (count > 1) { count--; document.getElementById('countVal').textContent = count; }
+    };
+    document.getElementById('inc').onclick = () => {
+      if (count < 10) { count++; document.getElementById('countVal').textContent = count; }
+    };
+
+    document.getElementById('genBtn').onclick = () => {
+      tickets.length = 0;
+      for (let i = 0; i < count; i++) tickets.push(pick());
+      render();
+    };
+
+    document.getElementById('clearBtn').onclick = () => {
+      tickets.length = 0;
+      render();
+    };
+
+    render();
+  </script>
+</body>
+</html>
