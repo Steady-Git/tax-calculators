@@ -419,13 +419,13 @@ h1 {
   <div class="card-header"><span class="num">2</span> 혼인·출산 추가공제 <span style="font-size:10px;font-weight:400;margin-left:8px;opacity:0.7">(2024년 이후 적용)</span></div>
   <div class="row">
     <label>혼인·출산 공제 적용</label>
-    <select id="marriageBirth" onchange="calculate()">
+    <select id="marriageBirth" onchange="onMbChange()">
       <option value="none">해당 없음</option>
       <option value="yes">해당 (최대 1억원 추가공제)</option>
     </select>
   </div>
   <div class="row" id="mbAmtRow" style="display:none;">
-    <label>혼인·출산 공제액</label>
+    <label>혼인·출산 공제액<br><span style="font-size:10px;color:var(--ink-soft)">최대 1억원</span></label>
     <input type="text" id="mbAmt" placeholder="100,000,000" oninput="handleInput(this)" />
     <span class="unit">원</span>
   </div>
@@ -727,7 +727,9 @@ function calculate() {
 
   let mbDeduct = 0;
   if (mbApply) {
-    mbDeduct = Math.min(parseVal('mbAmt'), 100_000_000);
+    const mbAmtVal = parseVal('mbAmt');
+    // 입력값이 없으면 최대 한도 1억 적용
+    mbDeduct = Math.min(mbAmtVal > 0 ? mbAmtVal : 100_000_000, 100_000_000);
   }
   const appraisalFee = parseVal('appraisalFee');
   const totalDeduct  = baseDeduct + mbDeduct + appraisalFee;
@@ -802,6 +804,21 @@ function calculate() {
 
 // ── 공제 모드 변경 ─────────────────────────────────────────
 function onDeductModeChange() {
+  calculate();
+}
+
+// ── 혼인·출산 공제 선택 변경 ──────────────────────────────
+function onMbChange() {
+  const val = document.getElementById('marriageBirth').value;
+  const mbAmtInput = document.getElementById('mbAmt');
+  if (val === 'yes') {
+    // 자동으로 1억원 채우기 (비어있을 때만)
+    if (!mbAmtInput.value) {
+      mbAmtInput.value = '100,000,000';
+    }
+  } else {
+    mbAmtInput.value = '';
+  }
   calculate();
 }
 
