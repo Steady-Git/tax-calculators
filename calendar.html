@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>대한민국 기념일 달력</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:       #f7f5f0;
+      --surface:  #ffffff;
+      --ink:      #1c1c1e;
+      --ink2:     #48484a;
+      --muted:    #8e8e93;
+      --line:     #e5e5ea;
+      --red:      #d0021b;
+      --blue:     #1a56db;
+      --green:    #1a7a3a;
+      --gold:     #b8860b;
+      --amber:    #f5a623;
+      --purple:   #7b5ea7;
+
+      --t-hol-bg:#fff0f0; --t-hol-fg:var(--red);
+      --t-ann-bg:#f0f7ff; --t-ann-fg:var(--blue);
+      --t-nat-bg:#fff8e6; --t-nat-fg:#7a5c00;
+      --t-sol-bg:#f0f9f4; --t-sol-fg:var(--green);
+      --t-etc-bg:#f5f0ff; --t-etc-fg:var(--purple);
+
+      --radius:12px;
+      --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.05);
+      --picker-w:280px;
+    }
+
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{font-size:16px;-webkit-text-size-adjust:100%;}
+    body{
+      background:var(--bg);
+      color:var(--ink);
+      font-family:'Noto Sans KR',sans-serif;
+      min-height:100dvh;
+    }
+
+    /* ════════════════════════════════
+       HEADER
+    ════════════════════════════════ */
+    .app-header{
+      background:var(--ink);
+      color:#fff;
+      padding:14px 16px 10px;
+      position:sticky;
+      top:0;
+      z-index:200;
+    }
+    .header-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .app-title{font-size:.95rem;font-weight:700;letter-spacing:-.3px;white-space:nowrap;}
+    .app-subtitle{font-family:'DM Mono',monospace;font-size:.58rem;color:rgba(255,255,255,.4);letter-spacing:1.5px;margin-top:2px;}
+
+    /* month nav */
+    .month-nav{
+      display:flex;align-items:center;
+      background:rgba(255,255,255,.1);
+      border-radius:24px;padding:2px;flex-shrink:0;
+      position:relative;
+    }
+    .nav-btn{
+      width:38px;height:38px;border:none;background:transparent;color:#fff;
+      font-size:1.1rem;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      border-radius:20px;transition:background .15s;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;
+    }
+    .nav-btn:hover{background:rgba(255,255,255,.15);}
+    .nav-btn:active{background:rgba(255,255,255,.25);}
+
+    /* ym-label — clickable */
+    .ym-label{
+      font-family:'DM Mono',monospace;
+      font-size:.88rem;font-weight:500;letter-spacing:2px;color:#fff;
+      min-width:96px;text-align:center;user-select:none;
+      cursor:pointer;
+      padding:6px 8px;border-radius:8px;
+      transition:background .15s;
+      display:flex;align-items:center;justify-content:center;gap:5px;
+      position:relative;
+    }
+    .ym-label:hover{background:rgba(255,255,255,.12);}
+    .ym-label:active{background:rgba(255,255,255,.2);}
+    .ym-label .caret{
+      font-size:.55rem;opacity:.6;
+      transition:transform .2s;
+      line-height:1;
+    }
+    .ym-label.open .caret{transform:rotate(180deg);}
+
+    /* status */
+    .status-strip{
+      margin-top:8px;
+      font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:1px;
+      color:rgba(255,255,255,.35);display:flex;gap:10px;flex-wrap:wrap;
+    }
+    .status-strip b{color:rgba(255,255,255,.7);}
+
+    /* ════════════════════════════════
+       YEAR-MONTH PICKER POPUP
+    ════════════════════════════════ */
+    /* Transparent backdrop — just catches outside clicks */
+    .picker-backdrop{
+      display:none;
+      position:fixed;inset:0;
+      z-index:300;
+    }
+    .picker-backdrop.open{display:block;}
+
+    /* Popup lives at <body> level, positioned via JS — NO blur on page */
+    .picker-popup{
+      display:none;
+      position:fixed;
+      width:var(--picker-w);
+      background:var(--surface);
+      border-radius:16px;
+      box-shadow:0 8px 40px rgba(0,0,0,.26),0 2px 8px rgba(0,0,0,.1);
+      overflow:hidden;
+      z-index:500;
+    }
+    .picker-popup.open{
+      display:block;
+      animation:popIn .18s cubic-bezier(.34,1.4,.64,1) both;
+    }
+    @keyframes popIn{
+      from{opacity:0;transform:scale(.93);}
+      to  {opacity:1;transform:scale(1);}
+    }
+
+    /* year row inside picker */
+    .picker-year-row{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 16px 10px;
+      border-bottom:1px solid var(--line);
+    }
+    .picker-year-nav{
+      width:32px;height:32px;border:none;background:transparent;
+      color:var(--ink2);font-size:1rem;cursor:pointer;border-radius:8px;
+      display:flex;align-items:center;justify-content:center;
+      transition:background .15s;-webkit-tap-highlight-color:transparent;
+    }
+    .picker-year-nav:hover{background:var(--bg);}
+    .picker-year-nav:active{background:var(--line);}
+    .picker-year-val{
+      font-family:'DM Mono',monospace;font-size:1rem;font-weight:600;
+      color:var(--ink);letter-spacing:1px;
+    }
+
+    /* month grid */
+    .picker-months{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:6px;
+      padding:12px 14px 16px;
+    }
+    .pm-btn{
+      padding:10px 4px;
+      border:1.5px solid var(--line);border-radius:10px;
+      background:transparent;
+      font-family:'Noto Sans KR',sans-serif;font-size:.78rem;font-weight:500;
+      color:var(--ink2);cursor:pointer;
+      transition:all .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+      text-align:center;
+    }
+    .pm-btn:hover{border-color:var(--gold);color:var(--gold);}
+    .pm-btn.current-month{
+      border-color:var(--gold);background:var(--gold);color:#fff;font-weight:700;
+    }
+    .pm-btn.today-month{
+      border-color:var(--ink);color:var(--ink);font-weight:600;
+    }
+    .pm-btn:active{transform:scale(.95);}
+
+    /* ════════════════════════════════
+       FILTER BAR
+    ════════════════════════════════ */
+    .filter-bar{
+      display:flex;gap:6px;padding:10px 14px;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+      background:var(--surface);border-bottom:1px solid var(--line);
+    }
+    .filter-bar::-webkit-scrollbar{display:none;}
+    .filter-chip{
+      flex-shrink:0;padding:5px 12px;border-radius:20px;
+      font-size:.72rem;font-weight:500;
+      border:1.5px solid var(--line);background:transparent;color:var(--muted);
+      cursor:pointer;white-space:nowrap;transition:all .15s;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    }
+    .filter-chip.active{border-color:var(--ink);background:var(--ink);color:#fff;}
+
+    /* ════════════════════════════════
+       MAIN LAYOUT
+    ════════════════════════════════ */
+    .app-body{
+      max-width:900px;margin:0 auto;
+      padding:14px 10px 32px;
+      display:flex;flex-direction:column;gap:14px;
+    }
+
+    /* ── CALENDAR CARD ── */
+    .cal-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+    .dow-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1.5px solid var(--line);}
+    .dow-cell{
+      padding:9px 0 7px;text-align:center;
+      font-family:'DM Mono',monospace;font-size:.6rem;font-weight:500;letter-spacing:1px;color:var(--muted);
+    }
+    .dow-cell:first-child{color:var(--red);}
+    .dow-cell:last-child{color:var(--blue);}
+
+    .weeks-wrap{}
+    .week-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--line);}
+    .week-row:last-child{border-bottom:none;}
+
+    .day-cell{
+      border-right:1px solid var(--line);
+      min-height:64px;padding:5px 4px 3px;position:relative;overflow:hidden;
+    }
+    .day-cell:last-child{border-right:none;}
+    .day-cell.empty{background:rgba(0,0,0,.015);pointer-events:none;}
+    .day-cell.has-event{background:#fafcff;}
+    .day-cell.has-holiday{background:#fff8f8;}
+
+    .day-num{
+      display:inline-flex;align-items:center;justify-content:center;
+      width:24px;height:24px;
+      font-family:'DM Mono',monospace;font-size:.75rem;font-weight:500;
+      color:var(--ink);border-radius:50%;line-height:1;flex-shrink:0;
+    }
+    .day-cell.sun  .day-num{color:var(--red);}
+    .day-cell.sat  .day-num{color:var(--blue);}
+    .day-cell.is-holiday .day-num{color:var(--red);}
+    .day-cell.today .day-num{background:var(--gold);color:#fff;font-weight:700;}
+
+    .tag-list{margin-top:2px;display:flex;flex-direction:column;gap:2px;}
+    .etag{
+      font-size:.5rem;font-weight:500;line-height:1.25;
+      padding:1px 3px;border-radius:3px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      max-width:100%;display:block;
+    }
+    .etag.t-hol{background:var(--t-hol-bg);color:var(--t-hol-fg);}
+    .etag.t-ann{background:var(--t-ann-bg);color:var(--t-ann-fg);}
+    .etag.t-nat{background:var(--t-nat-bg);color:var(--t-nat-fg);}
+    .etag.t-sol{background:var(--t-sol-bg);color:var(--t-sol-fg);}
+    .etag.t-etc{background:var(--t-etc-bg);color:var(--t-etc-fg);}
+
+    /* ── EVENT LIST ── */
+    .list-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+    .list-card-title{
+      padding:13px 16px 9px;font-size:.78rem;font-weight:700;color:var(--ink2);
+      border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;
+    }
+    .count-badge{
+      font-family:'DM Mono',monospace;font-size:.68rem;font-weight:400;
+      background:var(--bg);color:var(--muted);border-radius:20px;padding:2px 8px;
+    }
+    .ev-list{list-style:none;}
+    .ev-item{
+      display:flex;align-items:flex-start;gap:10px;
+      padding:10px 16px;border-bottom:1px solid var(--line);
+      animation:fadeUp .22s ease both;
+    }
+    .ev-item:last-child{border-bottom:none;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
+    .ev-date-col{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--muted);min-width:36px;padding-top:2px;flex-shrink:0;}
+    .ev-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+    .ev-dot.t-hol{background:var(--red);}
+    .ev-dot.t-ann{background:var(--blue);}
+    .ev-dot.t-nat{background:var(--amber);}
+    .ev-dot.t-sol{background:var(--green);}
+    .ev-dot.t-etc{background:var(--purple);}
+    .ev-info{flex:1;min-width:0;}
+    .ev-name{font-size:.82rem;font-weight:500;color:var(--ink);line-height:1.4;}
+    .ev-type-label{display:inline-block;font-size:.6rem;font-weight:500;border-radius:3px;padding:1px 5px;margin-top:2px;}
+    .ev-type-label.t-hol{background:var(--t-hol-bg);color:var(--t-hol-fg);}
+    .ev-type-label.t-ann{background:var(--t-ann-bg);color:var(--t-ann-fg);}
+    .ev-type-label.t-nat{background:var(--t-nat-bg);color:var(--t-nat-fg);}
+    .ev-type-label.t-sol{background:var(--t-sol-bg);color:var(--t-sol-fg);}
+    .ev-type-label.t-etc{background:var(--t-etc-bg);color:var(--t-etc-fg);}
+
+    /* ── LEGEND ── */
+    .legend-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;}
+    .legend-title{font-size:.7rem;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+    .legend-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 12px;}
+    .leg-row{display:flex;align-items:center;gap:7px;font-size:.73rem;color:var(--ink2);}
+    .leg-swatch{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+
+    /* ── STATE ── */
+    .state-box{
+      display:flex;flex-direction:column;align-items:center;
+      justify-content:center;gap:10px;padding:40px 20px;color:var(--muted);font-size:.8rem;
+    }
+    .spinner{width:20px;height:20px;border:2.5px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .error-icon{font-size:1.8rem;}
+    .error-msg{color:var(--red);font-size:.78rem;text-align:center;line-height:1.6;}
+    .error-hint{font-size:.68rem;color:var(--muted);text-align:center;line-height:1.6;}
+    .empty-notice{padding:22px 16px;text-align:center;color:var(--muted);font-size:.78rem;}
+
+    /* ── PC layout ── */
+    @media(min-width:680px){
+      .app-body{
+        display:grid;grid-template-columns:1fr 260px;
+        grid-template-rows:auto auto 1fr;align-items:start;
+        padding:20px 20px 40px;gap:16px;
+      }
+      .cal-card  {grid-column:1;grid-row:1/4;}
+      .list-card {grid-column:2;grid-row:1;}
+      .legend-card{grid-column:2;grid-row:2;}
+      .day-cell{min-height:90px;padding:7px 6px 4px;}
+      .day-num{width:26px;height:26px;font-size:.8rem;}
+      .etag{font-size:.58rem;}
+
+      /* On desktop, anchor popup below the nav area */
+      .picker-popup{
+        top:calc(100% + 8px);
+        left:50%;
+        transform:translateX(-50%);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════
+     PICKER BACKDROP (transparent, outside click catcher)
+════════════════════════════ -->
+<div class="picker-backdrop" id="pickerBackdrop"></div>
+
+<!-- ════════════════════════════
+     PICKER POPUP — at body level, positioned by JS
+════════════════════════════ -->
+<div class="picker-popup" id="pickerPopup" role="dialog" aria-label="날짜 선택">
+  <div class="picker-year-row">
+    <button class="picker-year-nav" id="pyPrev" aria-label="이전 연도">&#8592;</button>
+    <span class="picker-year-val" id="pyVal">────</span>
+    <button class="picker-year-nav" id="pyNext" aria-label="다음 연도">&#8594;</button>
+  </div>
+  <div class="picker-months" id="pickerMonths"></div>
+</div>
+
+<!-- ════════════════════════════
+     HEADER
+════════════════════════════ -->
+<header class="app-header">
+  <div class="header-top">
+    <div>
+      <div class="app-title">대한민국 기념일 달력</div>
+      <div class="app-subtitle">한국천문연구원 특일 정보</div>
+    </div>
+
+    <nav class="month-nav" aria-label="월 이동">
+      <button class="nav-btn" id="prevBtn" aria-label="이전 달">&#8592;</button>
+
+      <!-- Clickable year-month label -->
+      <div class="ym-label" id="ymLabel" role="button" tabindex="0"
+           aria-haspopup="true" aria-expanded="false" aria-label="연월 선택">
+        <span id="ymText">──── ──</span>
+        <span class="caret">▼</span>
+      </div>
+
+      <button class="nav-btn" id="nextBtn" aria-label="다음 달">&#8594;</button>
+    </nav>
+  </div>
+
+  <div class="status-strip">
+    <span id="statusLoad">STATUS <b>대기중</b></span>
+  </div>
+</header>
+
+<!-- ════════════════════════════
+     FILTER
+════════════════════════════ -->
+<div class="filter-bar" id="filterBar" role="group" aria-label="표시 유형 필터">
+  <button class="filter-chip active" data-type="all">전체</button>
+  <button class="filter-chip" data-type="hol">🔴 공휴일</button>
+  <button class="filter-chip" data-type="ann">🔵 기념일</button>
+  <button class="filter-chip" data-type="nat">🟡 국경일</button>
+  <button class="filter-chip" data-type="sol">🟢 24절기</button>
+  <button class="filter-chip" data-type="etc">🟣 잡절</button>
+</div>
+
+<!-- ════════════════════════════
+     MAIN
+════════════════════════════ -->
+<main class="app-body">
+
+  <div class="cal-card">
+    <div class="dow-row">
+      <div class="dow-cell">일</div><div class="dow-cell">월</div>
+      <div class="dow-cell">화</div><div class="dow-cell">수</div>
+      <div class="dow-cell">목</div><div class="dow-cell">금</div>
+      <div class="dow-cell">토</div>
+    </div>
+    <div class="weeks-wrap" id="weeksWrap">
+      <div class="state-box"><div class="spinner"></div><span>달력을 불러오는 중…</span></div>
+    </div>
+  </div>
+
+  <div class="list-card">
+    <div class="list-card-title">
+      이달의 일정
+      <span class="count-badge" id="countBadge">──</span>
+    </div>
+    <ul class="ev-list" id="eventList">
+      <li class="empty-notice">불러오는 중…</li>
+    </ul>
+  </div>
+
+  <div class="legend-card">
+    <div class="legend-title">범례</div>
+    <div class="legend-grid">
+      <div class="leg-row"><div class="leg-swatch" style="background:var(--red)"></div>공휴일</div>
+      <div class="leg-row"><div class="leg-swatch" style="background:var(--blue)"></div>기념일</div>
+      <div class="leg-row"><div class="leg-swatch" style="background:var(--amber)"></div>국경일</div>
+      <div class="leg-row"><div class="leg-swatch" style="background:var(--green)"></div>24절기</div>
+      <div class="leg-row"><div class="leg-swatch" style="background:var(--purple)"></div>잡절</div>
+      <div class="leg-row"><div class="leg-swatch" style="background:var(--gold);border-radius:50%"></div>오늘</div>
+      <div class="leg-row"><div class="leg-swatch" style="background:var(--red);border-radius:50%"></div>일요일</div>
+      <div class="leg-row"><div class="leg-swatch" style="background:var(--blue);border-radius:50%"></div>토요일</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* ════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════ */
+const API_KEY  = 'dc8294cd0177c5d51b45be29652fb691c4b18e055f22c87b0967ca1a78c7df0a';
+const BASE_URL = 'https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService';
+const ENDPOINTS = [
+  { op:'getRestDeInfo',      type:'hol', label:'공휴일' },
+  { op:'getAnniversaryInfo', type:'ann', label:'기념일' },
+  { op:'getSundryDayInfo',   type:'nat', label:'국경일' },
+  { op:'get24DivisionsInfo', type:'sol', label:'24절기' },
+  { op:'getHoliDeInfo',      type:'etc', label:'잡절'   },
+];
+const tagCls = { hol:'t-hol', ann:'t-ann', nat:'t-nat', sol:'t-sol', etc:'t-etc' };
+const MONTH_NAMES = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+/* ════════════════════════════════════════
+   STATE
+════════════════════════════════════════ */
+let curYear, curMonth, activeFilter = 'all';
+let pickerYear;   // year being browsed inside the picker
+let pickerOpen = false;
+let cache = {};
+const today = new Date();
+const pad2  = n => String(n).padStart(2,'0');
+
+/* ════════════════════════════════════════
+   FETCH
+════════════════════════════════════════ */
+async function fetchOne({ op, type, label }, year, month) {
+  const url = `${BASE_URL}/${op}?serviceKey=${API_KEY}&solYear=${year}&solMonth=${pad2(month)}&numOfRows=100&pageNo=1`;
+  const res  = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const xml  = new DOMParser().parseFromString(await res.text(), 'text/xml');
+  const code = xml.querySelector('resultCode')?.textContent?.trim();
+  if (code && code !== '00')
+    throw new Error(`[${code}] ${xml.querySelector('resultMsg')?.textContent?.trim()}`);
+  const items = [];
+  xml.querySelectorAll('item').forEach(el => {
+    const date      = el.querySelector('locdate')?.textContent?.trim() || '';
+    const name      = el.querySelector('dateName')?.textContent?.trim() || '';
+    const isHoliday = el.querySelector('isHoliday')?.textContent?.trim() === 'Y';
+    if (date && name) items.push({ date, name, type, label, isHoliday });
+  });
+  return items;
+}
+
+async function fetchMonth(year, month) {
+  const key = `${year}${pad2(month)}`;
+  if (cache[key]) return cache[key];
+  const settled = await Promise.allSettled(ENDPOINTS.map(ep => fetchOne(ep, year, month)));
+  const all = [];
+  settled.forEach((r, i) => {
+    if (r.status === 'fulfilled') all.push(...r.value);
+    else console.warn(ENDPOINTS[i].label, r.reason?.message);
+  });
+  const seen = new Set();
+  const unique = all.filter(e => {
+    const k = e.date + e.name;
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+  return (cache[key] = unique);
+}
+
+/* ════════════════════════════════════════
+   RENDER CALENDAR
+════════════════════════════════════════ */
+async function render(year, month) {
+  document.getElementById('ymText').textContent    = `${year}.${pad2(month)}`;
+  document.getElementById('statusLoad').innerHTML  = `STATUS <b>불러오는 중…</b>`;
+  document.getElementById('countBadge').textContent = '──';
+  document.getElementById('weeksWrap').innerHTML   =
+    `<div class="state-box"><div class="spinner"></div><span>데이터 로딩 중…</span></div>`;
+  document.getElementById('eventList').innerHTML   =
+    `<li class="empty-notice">불러오는 중…</li>`;
+
+  let events = [];
+  try {
+    events = await fetchMonth(year, month);
+  } catch(err) {
+    document.getElementById('weeksWrap').innerHTML = `
+      <div class="state-box">
+        <div class="error-icon">⚠️</div>
+        <div class="error-msg">API 호출 실패: ${err.message}</div>
+        <div class="error-hint">로컬 서버(VS Code Live Server 등)에서 열거나<br>브라우저 CORS 허용 확장을 사용해 주세요.</div>
+      </div>`;
+    document.getElementById('eventList').innerHTML  = `<li class="empty-notice">데이터를 불러올 수 없습니다</li>`;
+    document.getElementById('statusLoad').innerHTML = `STATUS <b style="color:#ff6b6b">오류</b>`;
+    return;
+  }
+
+  const visible = activeFilter === 'all' ? events : events.filter(e => e.type === activeFilter);
+  const byDate  = {};
+  visible.forEach(e => { (byDate[e.date] ??= []).push(e); });
+
+  const firstDow    = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const todayStr    = `${today.getFullYear()}${pad2(today.getMonth()+1)}${pad2(today.getDate())}`;
+
+  const slots = [];
+  for (let i = 0; i < firstDow; i++) slots.push(null);
+  for (let d = 1; d <= daysInMonth; d++) slots.push(d);
+  while (slots.length % 7 !== 0) slots.push(null);
+
+  let weeksHtml = '';
+  for (let w = 0; w < slots.length / 7; w++) {
+    weeksHtml += `<div class="week-row">`;
+    for (let col = 0; col < 7; col++) {
+      const d = slots[w * 7 + col];
+      if (d === null) { weeksHtml += `<div class="day-cell empty"></div>`; continue; }
+
+      const dateStr = `${year}${pad2(month)}${pad2(d)}`;
+      const isSun   = col === 0, isSat = col === 6;
+      const isToday = dateStr === todayStr;
+      const dayEvs  = byDate[dateStr] || [];
+      const hasHol  = dayEvs.some(e => e.isHoliday);
+
+      let cls = 'day-cell';
+      if (isSun) cls += ' sun';
+      if (isSat) cls += ' sat';
+      if (isToday) cls += ' today';
+      if (hasHol) cls += ' is-holiday has-holiday';
+      else if (dayEvs.length) cls += ' has-event';
+
+      const MAX = 2;
+      let tags = '';
+      dayEvs.slice(0, MAX).forEach(e => {
+        tags += `<div class="etag ${tagCls[e.type]||'t-etc'}" title="${e.name}">${e.name}</div>`;
+      });
+      if (dayEvs.length > MAX)
+        tags += `<div class="etag t-etc">+${dayEvs.length - MAX}</div>`;
+
+      weeksHtml += `<div class="${cls}"><div class="day-num">${d}</div><div class="tag-list">${tags}</div></div>`;
+    }
+    weeksHtml += `</div>`;
+  }
+  document.getElementById('weeksWrap').innerHTML = weeksHtml;
+
+  const sorted = [...visible].sort((a,b) => a.date.localeCompare(b.date));
+  document.getElementById('countBadge').textContent = `${sorted.length}건`;
+  document.getElementById('eventList').innerHTML = sorted.length === 0
+    ? `<li class="empty-notice">표시할 일정이 없습니다</li>`
+    : sorted.map((e, i) => {
+        const tc = tagCls[e.type] || 't-etc';
+        return `
+          <li class="ev-item" style="animation-delay:${i*18}ms">
+            <div class="ev-date-col">${e.date.slice(6)}일</div>
+            <div class="ev-dot ${tc}"></div>
+            <div class="ev-info">
+              <div class="ev-name">${e.name}</div>
+              <div class="ev-type-label ${tc}">${e.label}</div>
+            </div>
+          </li>`;
+      }).join('');
+
+  const counts = Object.fromEntries(ENDPOINTS.map(ep => [ep.type, 0]));
+  events.forEach(e => { if (counts[e.type] !== undefined) counts[e.type]++; });
+  document.getElementById('statusLoad').innerHTML =
+    `공휴일 <b>${counts.hol}</b> · 기념일 <b>${counts.ann}</b> · 국경일 <b>${counts.nat}</b> · 절기 <b>${counts.sol}</b> · 잡절 <b>${counts.etc}</b>`;
+}
+
+/* ════════════════════════════════════════
+   PICKER — open / close / render months
+════════════════════════════════════════ */
+function renderPickerMonths() {
+  document.getElementById('pyVal').textContent = pickerYear;
+  const todayY = today.getFullYear();
+  const todayM = today.getMonth() + 1;
+
+  document.getElementById('pickerMonths').innerHTML = MONTH_NAMES.map((name, i) => {
+    const m = i + 1;
+    let cls = 'pm-btn';
+    if (pickerYear === curYear  && m === curMonth) cls += ' current-month';
+    else if (pickerYear === todayY && m === todayM) cls += ' today-month';
+    return `<button class="${cls}" data-m="${m}">${name}</button>`;
+  }).join('');
+}
+
+function openPicker() {
+  if (pickerOpen) { closePicker(); return; }
+  pickerOpen = true;
+  pickerYear = curYear;
+  renderPickerMonths();
+
+  /* Position popup below the ym-label using its screen coords */
+  const lbl    = document.getElementById('ymLabel');
+  const popup  = document.getElementById('pickerPopup');
+  const rect   = lbl.getBoundingClientRect();
+  const pw     = parseInt(getComputedStyle(document.documentElement)
+                   .getPropertyValue('--picker-w'), 10) || 280;
+  const vw     = window.innerWidth;
+  const vh     = window.innerHeight;
+
+  let left = rect.left + rect.width / 2 - pw / 2;   // centered under label
+  left = Math.max(8, Math.min(left, vw - pw - 8));   // clamp to viewport
+
+  let top = rect.bottom + 8;
+  if (top + 260 > vh) top = rect.top - 260 - 8;      // flip up if no room
+
+  popup.style.left = left + 'px';
+  popup.style.top  = top  + 'px';
+
+  popup.classList.add('open');
+  document.getElementById('ymLabel').classList.add('open');
+  document.getElementById('ymLabel').setAttribute('aria-expanded','true');
+  document.getElementById('pickerBackdrop').classList.add('open');
+}
+
+function closePicker() {
+  pickerOpen = false;
+  document.getElementById('ymLabel').classList.remove('open');
+  document.getElementById('ymLabel').setAttribute('aria-expanded','false');
+  document.getElementById('pickerPopup').classList.remove('open');
+  document.getElementById('pickerBackdrop').classList.remove('open');
+}
+
+function selectMonth(year, month) {
+  curYear  = year;
+  curMonth = month;
+  closePicker();
+  render(curYear, curMonth);
+}
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+(function init() {
+  curYear  = today.getFullYear();
+  curMonth = today.getMonth() + 1;
+
+  /* ── Prev / Next ── */
+  document.getElementById('prevBtn').onclick = e => {
+    e.stopPropagation();
+    closePicker();
+    if (--curMonth < 1) { curMonth = 12; curYear--; }
+    render(curYear, curMonth);
+  };
+  document.getElementById('nextBtn').onclick = e => {
+    e.stopPropagation();
+    closePicker();
+    if (++curMonth > 12) { curMonth = 1; curYear++; }
+    render(curYear, curMonth);
+  };
+
+  /* ── YM label → open picker ── */
+  const ymLabel = document.getElementById('ymLabel');
+  ymLabel.addEventListener('click', e => {
+    e.stopPropagation();
+    openPicker();
+  });
+  ymLabel.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); }
+    if (e.key === 'Escape') closePicker();
+  });
+
+  /* ── Picker: year prev/next ── */
+  document.getElementById('pyPrev').onclick = e => {
+    e.stopPropagation();
+    pickerYear--;
+    renderPickerMonths();
+  };
+  document.getElementById('pyNext').onclick = e => {
+    e.stopPropagation();
+    pickerYear++;
+    renderPickerMonths();
+  };
+
+  /* ── Picker: month buttons ── */
+  document.getElementById('pickerMonths').addEventListener('click', e => {
+    e.stopPropagation();
+    const btn = e.target.closest('.pm-btn');
+    if (!btn) return;
+    selectMonth(pickerYear, parseInt(btn.dataset.m, 10));
+  });
+
+  /* ── Backdrop click → close ── */
+  document.getElementById('pickerBackdrop').onclick = closePicker;
+
+  /* ── Escape key anywhere → close ── */
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePicker(); });
+
+  /* ── Filter chips ── */
+  document.getElementById('filterBar').addEventListener('click', e => {
+    const chip = e.target.closest('.filter-chip');
+    if (!chip) return;
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    activeFilter = chip.dataset.type;
+    render(curYear, curMonth);
+  });
+
+  render(curYear, curMonth);
+})();
+</script>
+</body>
+</html>
