@@ -399,15 +399,6 @@ nav { padding: 0.5rem 0; flex: 1; }
   .home-view { padding: 1.5rem 1.25rem 3rem; }
 }
 </style>
-<!-- ══ PWA 설정 ══ -->
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#c8401a">
-<meta name="mobile-web-app-capable" content="yes">
-<!-- iOS Safari 전용 -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="세금계산기">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
 </head>
 <body>
 <div class="layout">
@@ -727,16 +718,6 @@ function closeCalc() {
   setTimeout(() => { document.getElementById('calcFrame').src = ''; }, 200);
   if (activeNavItem) { activeNavItem.classList.remove('active'); activeNavItem = null; }
 }
-</script>
-<!-- ══ Service Worker 등록 ══ -->
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .then(reg => console.log('[PWA] 등록 완료', reg.scope))
-        .catch(err => console.warn('[PWA] 등록 실패', err));
-    });
-  }
 </script>
 </body>
 </html>
