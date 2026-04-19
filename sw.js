@@ -26,8 +26,8 @@ const CACHE_URLS = [
   '/calendar.html',
   '/lotto.html',
   '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
 // 설치: 핵심 파일 캐시
