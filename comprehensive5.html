@@ -380,7 +380,7 @@
 <div class="card">
   <div class="card-header">
     <h1>🏠 종합부동산세 계산기</h1>
-    <p>2023년 개정 기준 · 주택분 종합부동산세</p>
+    <p>주택분 종합부동산세</p>
   </div>
 
   <div class="card-body">
@@ -416,7 +416,6 @@
 
     <div class="notice">
       ⚠️ 본 계산기는 참고용이며, 세액공제(고령자·장기보유) 및 개별 감면은 반영되지 않습니다.
-      정확한 세액은 국세청 홈택스의 종합부동산세 간이세액계산 서비스를 이용하세요.
     </div>
 
     <!-- 하단 액션 버튼 -->
@@ -766,7 +765,7 @@
 
               <div class="formula">
                 <strong>④ 공제할 재산세액</strong><br>
-                <span class="sub">= ① 재산세 부과세액 합계 × ② ÷ ③</span><br><br>
+                <span class="sub">= ① 재산세 부과세액 합계 × ② 종부세 과세표준 × 60% × 재산세 세율 ÷ ③ 전체 주택에 대한 재산세액</span><br><br>
                 <span class="hi">${fmt(propTaxTotal)}</span>
                 × <span class="hi">${fmt(jongbuBaseForPropRate * jongbuPropRate)}</span><br>
                 ÷ <span class="hi">${fmt(totalPropTaxSum)}</span><br>
