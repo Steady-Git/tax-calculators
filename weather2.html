@@ -1958,7 +1958,7 @@
     document.getElementById('updateTime').textContent =
       `업데이트 ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
 
-    // 모든 지역 단기 + 중기 + 초단기실황 + 일출일몰 + 대기오염 병렬 로드
+    // 모든 지역 단기 + 중기 + 초단기실황 + 대기오염 병렬 로드
     await Promise.all(REGIONS.map(async (r, i) => {
       const [shortRes, midRes, ncstRes, aqiRes] = await Promise.allSettled([
         fetchWeather(r),
