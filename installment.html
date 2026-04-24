@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --accent: #c8102e;
+    --gold: #b8860b;
+    --rule: #1a1a2e;
+    --muted: #6b6b7a;
+    --light-rule: #d4cfc4;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Serif KR', serif;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .container { max-width: 860px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    border-top: 3px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding: 1.2rem 0 1rem;
+    margin-bottom: 2rem;
+    position: relative;
+  }
+  .header::after {
+    content: '';
+    display: block;
+    border-top: 1px solid var(--rule);
+    margin-top: 4px;
+  }
+  .header-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
+  .header .subtitle { font-size: 0.75rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  /* Input Grid */
+  .inputs-section {
+    background: white;
+    border: 1px solid var(--rule);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .section-label {
+    font-size: 0.65rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--light-rule);
+  }
+  .inputs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 1rem;
+  }
+  .field { display: flex; flex-direction: column; gap: 0.4rem; }
+  .field label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  .field .hint { font-size: 0.62rem; color: var(--muted); }
+  .input-wrap { position: relative; }
+  .input-wrap input, .input-wrap select {
+    width: 100%;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 0.5rem 0.6rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  .input-wrap input:focus, .input-wrap select:focus { border-color: var(--accent); }
+  .input-wrap .unit {
+    position: absolute; right: 0.5rem; top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.68rem; color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    pointer-events: none;
+  }
+  .input-wrap input { padding-right: 2.5rem; }
+
+  /* Period selector */
+  .period-field { grid-column: span 1; }
+  .period-select { display: flex; flex-direction: column; gap: 0.3rem; }
+  .period-select select {
+    width: 100%;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 0.5rem 0.6rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--ink);
+    outline: none;
+    cursor: pointer;
+  }
+  .period-select select:focus { border-color: var(--accent); }
+  .max-period-note { font-size: 0.62rem; color: var(--accent); font-weight: 600; }
+
+  /* Summary bar */
+  .summary-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--rule);
+    margin-bottom: 1.5rem;
+    background: white;
+  }
+  .summary-item {
+    padding: 0.9rem 1rem;
+    border-right: 1px solid var(--light-rule);
+    position: relative;
+  }
+  .summary-item:last-child { border-right: none; }
+  .summary-item .s-label {
+    font-size: 0.62rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  .summary-item .s-value {
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'DM Mono', monospace;
+    color: var(--ink);
+  }
+  .summary-item.accent .s-value { color: var(--accent); }
+
+  /* Results table */
+  .results-section { margin-bottom: 1.5rem; }
+  .results-section .section-label { margin-bottom: 0; padding: 0.6rem 1rem; background: var(--rule); color: var(--paper); border-bottom: none; letter-spacing: 0.1em; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid var(--rule);
+    border-top: none;
+  }
+  th {
+    background: #2c2c3e;
+    color: #e8e4da;
+    font-size: 0.68rem;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    text-align: right;
+    padding: 0.6rem 1rem;
+    font-weight: 500;
+    border-right: 1px solid #3a3a4e;
+  }
+  th:first-child { text-align: left; }
+  td {
+    padding: 0.65rem 1rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    text-align: right;
+    border-right: 1px solid var(--light-rule);
+    border-bottom: 1px solid var(--light-rule);
+    color: var(--ink);
+  }
+  td:first-child { text-align: left; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  tr.total-row td {
+    background: #f0ece0;
+    font-weight: 700;
+    font-size: 0.82rem;
+    border-top: 2px solid var(--rule);
+  }
+  tr.initial-row td { background: #fafaf7; }
+
+  /* Insurance table */
+  .insurance-section { margin-bottom: 1.5rem; }
+  .insurance-section .section-label { margin-bottom: 0; padding: 0.6rem 1rem; background: #4a4a3a; color: var(--paper); border-bottom: none; letter-spacing: 0.1em; }
+
+  /* Footer note */
+  .footnote {
+    font-size: 0.65rem;
+    color: var(--muted);
+    border-top: 1px solid var(--light-rule);
+    padding-top: 0.8rem;
+    line-height: 1.8;
+  }
+  .footnote strong { color: var(--ink); }
+
+  @media (max-width: 640px) {
+    .inputs-grid { grid-template-columns: 1fr 1fr; }
+    .summary-bar { grid-template-columns: 1fr 1fr; }
+    .summary-item { border-bottom: 1px solid var(--light-rule); }
+    table { font-size: 0.72rem; }
+    th, td { padding: 0.5rem 0.6rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-top">
+      <h1>연부연납 계산기</h1>
+      <span class="subtitle">상속세 · 증여세</span>
+    </div>
+  </div>
+
+  <!-- Inputs -->
+  <div class="inputs-section">
+    <div class="section-label">입력 항목</div>
+    <div class="inputs-grid">
+      <div class="field">
+        <label>총 납부세액</label>
+        <div class="input-wrap">
+          <input type="text" id="totalTax" value="36,000,000" oninput="formatAndCalc(this)" />
+          <span class="unit">원</span>
+        </div>
+      </div>
+      <div class="field period-field">
+        <label>연부연납 기간</label>
+        <div class="period-select">
+          <select id="period" onchange="calculate()"></select>
+          <span class="max-period-note" id="maxNote"></span>
+        </div>
+      </div>
+      <div class="field">
+        <label>가산율</label>
+        <div class="input-wrap">
+          <input type="number" id="surchargeRate" value="3.1" step="0.01" min="0" oninput="calculate()" />
+          <span class="unit">%/년</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>보험요율</label>
+        <div class="input-wrap">
+          <input type="number" id="insuranceRate" value="0.748" step="0.001" min="0" oninput="calculate()" />
+          <span class="unit">%/년</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-bar">
+    <div class="summary-item">
+      <div class="s-label">자진납부세액 (신고기한)</div>
+      <div class="s-value" id="s-initial">—</div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label">연부연납 총세액</div>
+      <div class="s-value" id="s-installTotal">—</div>
+    </div>
+    <div class="summary-item accent">
+      <div class="s-label">가산금 합계</div>
+      <div class="s-value" id="s-surchargeTotal">—</div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label">보험료 합계</div>
+      <div class="s-value" id="s-insuranceTotal">—</div>
+    </div>
+  </div>
+
+  <!-- Main table -->
+  <div class="results-section">
+    <div class="section-label">연부연납 납부 일정</div>
+    <table id="mainTable">
+      <thead>
+        <tr>
+          <th>구분</th>
+          <th>본세</th>
+          <th>가산금대상</th>
+          <th>가산금</th>
+          <th>합계 (연부연납액)</th>
+        </tr>
+      </thead>
+      <tbody id="mainBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Insurance table -->
+  <div class="insurance-section">
+    <div class="section-label">보증보험 가입 내역 (납부액 × 110% 기준)</div>
+    <table id="insTable">
+      <thead>
+        <tr>
+          <th>구분</th>
+          <th>연부연납액</th>
+          <th>보험가입액 (110%)</th>
+          <th>예상보험료</th>
+        </tr>
+      </thead>
+      <tbody id="insBody"></tbody>
+    </table>
+  </div>
+
+  <div class="footnote">
+    <strong>※ 연부연납가산금 계산 방식</strong><br>
+    · 1회차: 연부연납 총세액 × 분할납부기간(1년) × 가산율<br>
+    · 이후 회차: (연부연납 총세액 − 기납부세액 누계) × 분할납부기간(1년) × 가산율<br>
+    · 각 회분의 분할납부세액이 <strong>1,000만원을 초과</strong>하도록 연부연납기간을 설정해야 합니다.<br>
+    · 보증보험료 = 연부연납액(본세+가산금) × 110% × 보험요율
+  </div>
+</div>
+
+<script>
+function fmt(n) {
+  return Math.round(n).toLocaleString('ko-KR');
+}
+
+function parseNum(s) {
+  return parseFloat(String(s).replace(/,/g, '')) || 0;
+}
+
+function formatAndCalc(el) {
+  const raw = el.value.replace(/,/g, '').replace(/[^0-9]/g, '');
+  const num = parseInt(raw) || 0;
+  el.value = num.toLocaleString('ko-KR');
+  calculate();
+}
+
+function getMaxPeriod(total) {
+  // Each installment (연부연납 portion divided equally) must exceed 10,000,000
+  // Total연부연납 = total - initial, initial = total/(n+1)
+  // installment = total/(n+1) per payment, need > 10,000,000
+  // So total/(n+1) > 10,000,000 → n+1 < total/10,000,000 → n < total/10,000,000 - 1
+  const maxN = Math.floor(total / 10000000) - 1;
+  return Math.max(1, maxN);
+}
+
+function populatePeriod(total, currentVal) {
+  const sel = document.getElementById('period');
+  const maxN = getMaxPeriod(total);
+  const prev = currentVal || parseInt(sel.value) || maxN;
+  sel.innerHTML = '';
+  for (let i = 1; i <= maxN; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = i + '년';
+    if (i === maxN) opt.textContent += ' (최대)';
+    sel.appendChild(opt);
+  }
+  // Restore or set to max
+  const target = Math.min(prev, maxN);
+  sel.value = target > 0 ? target : maxN;
+  document.getElementById('maxNote').textContent = '최대 ' + maxN + '년 (회분당 1,000만원 초과 조건)';
+}
+
+function calculate() {
+  const total = parseNum(document.getElementById('totalTax').value);
+  const surchargeRate = parseFloat(document.getElementById('surchargeRate').value) / 100 || 0;
+  const insuranceRate = parseFloat(document.getElementById('insuranceRate').value) / 100 || 0;
+
+  if (total <= 0) return;
+
+  populatePeriod(total);
+  const n = parseInt(document.getElementById('period').value) || 1;
+
+  // Each payment = total / (n+1)  [initial + n installments]
+  const perPayment = total / (n + 1);
+  const initial = perPayment; // 자진납부 (신고기한)
+  const installTotal = total - initial; // 연부연납대상 총세액
+
+  // Build rows
+  const rows = [];
+
+  // Surcharge calculation
+  // Round 1: installTotal × 1year × rate
+  // Round k: (installTotal - (k-1)*perPayment) × 1year × rate
+  let totalSurcharge = 0;
+  let totalInsurance = 0;
+  let totalInstallPay = 0;
+
+  for (let k = 1; k <= n; k++) {
+    const remaining = installTotal - (k - 1) * perPayment; // 가산금 대상 잔액
+    const surcharge = remaining * surchargeRate * 1; // 1년 단위
+    const installPayment = perPayment + surcharge;
+    const insBase = installPayment * 1.1;
+    const insAmount = insBase * insuranceRate;
+    totalSurcharge += surcharge;
+    totalInsurance += insAmount;
+    totalInstallPay += installPayment;
+    rows.push({ k, base: perPayment, surchargeBase: remaining, surcharge, total: installPayment, insBase, insAmount });
+  }
+
+  // Render summary
+  document.getElementById('s-initial').textContent = fmt(initial) + '원';
+  document.getElementById('s-installTotal').textContent = fmt(total) + '원';
+  document.getElementById('s-surchargeTotal').textContent = fmt(totalSurcharge) + '원';
+  document.getElementById('s-insuranceTotal').textContent = fmt(totalInsurance) + '원';
+
+  // Render main table
+  const mb = document.getElementById('mainBody');
+  mb.innerHTML = '';
+
+  // Initial row
+  const ir = document.createElement('tr');
+  ir.className = 'initial-row';
+  ir.innerHTML = `
+    <td>자진납부 (신고기한)</td>
+    <td>${fmt(initial)}</td>
+    <td>—</td>
+    <td>—</td>
+    <td>${fmt(initial)}</td>
+  `;
+  mb.appendChild(ir);
+
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.k}회차</td>
+      <td>${fmt(r.base)}</td>
+      <td>${fmt(r.surchargeBase)}</td>
+      <td>${fmt(r.surcharge)}</td>
+      <td>${fmt(r.total)}</td>
+    `;
+    mb.appendChild(tr);
+  });
+
+  // Total row
+  const allBase = rows.reduce((a, r) => a + r.base, 0);
+  const allSC = rows.reduce((a, r) => a + r.surcharge, 0);
+  const allTotal = rows.reduce((a, r) => a + r.total, 0);
+  const totalRow = document.createElement('tr');
+  totalRow.className = 'total-row';
+  totalRow.innerHTML = `
+    <td>합계</td>
+    <td>${fmt(allBase)}</td>
+    <td>—</td>
+    <td>${fmt(allSC)}</td>
+    <td>${fmt(allTotal + initial)}</td>
+  `;
+  mb.appendChild(totalRow);
+
+  // Render insurance table
+  const ib = document.getElementById('insBody');
+  ib.innerHTML = '';
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.k}회차</td>
+      <td>${fmt(r.total)}</td>
+      <td>${fmt(r.insBase)}</td>
+      <td>${fmt(r.insAmount)}</td>
+    `;
+    ib.appendChild(tr);
+  });
+  const insTotalRow = document.createElement('tr');
+  insTotalRow.className = 'total-row';
+  insTotalRow.innerHTML = `
+    <td>합계</td>
+    <td>${fmt(totalInstallPay)}</td>
+    <td>${fmt(rows.reduce((a,r)=>a+r.insBase,0))}</td>
+    <td>${fmt(totalInsurance)}</td>
+  `;
+  ib.appendChild(insTotalRow);
+}
+
+// Init
+calculate();
+</script>
+</body>
+</html>
