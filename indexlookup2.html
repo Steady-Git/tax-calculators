@@ -494,7 +494,7 @@
     <div class="search-row">
       <div class="field grow">
         <label>지수명</label>
-        <input id="idxNm" type="text" placeholder="예: 코스닥, 코스피, KRX" autocomplete="off" />
+        <input id="idxNm" type="text" placeholder="예: 코스피, 코스닥, KRX" autocomplete="off" />
       </div>
       <div class="field">
         <label>기준일자 (선택)</label>
@@ -569,7 +569,7 @@ function setTab(tab, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   // quick search hint
-  const hints = { stock:'KOSPI, KOSDAQ', bond:'국고채, KTB' };
+  const hints = { stock:'코스피, 코스닥, KRX', bond:'국고채, KTB' };
   document.getElementById('idxNm').placeholder = `예: ${hints[tab]}`;
   hideAll();
 }
