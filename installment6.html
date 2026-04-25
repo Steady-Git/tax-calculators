@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #1a1a2e; --paper: #f5f0e8; --accent: #c8102e;
+    --rule: #1a1a2e; --muted: #6b6b7a; --light-rule: #d4cfc4;
+  }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh; padding: 1.2rem 0.75rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+
+  .header {
+    border-top: 3px solid var(--rule); border-bottom: 1px solid var(--rule);
+    padding: 1rem 0 0.8rem; margin-bottom: 1.2rem;
+  }
+  .header::after { content:''; display:block; border-top:1px solid var(--rule); margin-top:4px; }
+  .header-top { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:0.3rem; }
+  .header h1 { font-size: clamp(1.1rem, 4vw, 1.6rem); font-weight:700; letter-spacing:-0.02em; }
+  .header .subtitle { font-size:0.7rem; color:var(--muted); }
+
+  .inputs-section { background:white; border:1px solid var(--rule); padding:1rem; margin-bottom:1rem; }
+  .section-label {
+    font-size:0.62rem; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:0.8rem;
+    padding-bottom:0.4rem; border-bottom:1px solid var(--light-rule);
+  }
+  .inputs-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+  @media(min-width:540px){ .inputs-grid{ grid-template-columns:repeat(4,1fr); } }
+  .field { display:flex; flex-direction:column; gap:0.35rem; }
+  .field label { font-size:0.7rem; font-weight:600; color:var(--ink); }
+  .input-wrap { position:relative; }
+  .input-wrap input, .input-wrap select {
+    width:100%; background:var(--paper); border:1px solid var(--rule);
+    padding:0.45rem 2rem 0.45rem 0.5rem; font-family:'Noto Sans KR',sans-serif;
+    font-size:0.8rem; color:var(--ink); outline:none; -webkit-appearance:none; appearance:none;
+  }
+  .input-wrap input:focus, .input-wrap select:focus { border-color:var(--accent); }
+  .input-wrap .unit {
+    position:absolute; right:0.4rem; top:50%; transform:translateY(-50%);
+    font-size:0.6rem; color:var(--muted); pointer-events:none;
+  }
+  .period-select select {
+    width:100%; background:var(--paper); border:1px solid var(--rule);
+    padding:0.45rem 0.5rem; font-family:'Noto Sans KR',sans-serif; font-size:0.8rem;
+    color:var(--ink); outline:none; -webkit-appearance:none; appearance:none;
+  }
+  .period-select select:focus { border-color:var(--accent); }
+  .max-period-note { font-size:0.58rem; color:var(--accent); font-weight:600; margin-top:0.2rem; line-height:1.4; }
+  .period-info { font-size:0.58rem; color:var(--muted); margin-top:0.2rem; line-height:1.6; }
+
+  .summary-bar { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--rule); margin-bottom:1rem; background:white; }
+  @media(min-width:540px){ .summary-bar{ grid-template-columns:repeat(4,1fr); } }
+  .summary-item { padding:0.7rem 0.75rem; border-right:1px solid var(--light-rule); border-bottom:1px solid var(--light-rule); }
+  .summary-item:nth-child(2n) { border-right:none; }
+  @media(min-width:540px){
+    .summary-item{ border-bottom:none; }
+    .summary-item:nth-child(2n){ border-right:1px solid var(--light-rule); }
+    .summary-item:last-child{ border-right:none; }
+  }
+  .summary-item .s-label { font-size:0.58rem; letter-spacing:0.04em; color:var(--muted); margin-bottom:0.25rem; line-height:1.3; }
+  .summary-item .s-value { font-size:0.85rem; font-weight:700; color:var(--ink); word-break:break-all; }
+  .summary-item.accent .s-value { color:var(--accent); }
+
+  /* Scrollable table wrapper */
+  .table-scroll { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--rule); border-top:none; }
+  .table-scroll table { min-width:480px; width:100%; border-collapse:collapse; background:white; }
+
+  .results-section, .insurance-section { margin-bottom:1rem; }
+  .results-section .section-label, .insurance-section .section-label {
+    margin-bottom:0; padding:0.55rem 0.75rem; color:var(--paper);
+    border-bottom:none; letter-spacing:0.08em; font-size:0.6rem;
+  }
+  .results-section .section-label { background:var(--rule); }
+  .insurance-section .section-label { background:#4a4a3a; }
+
+  th {
+    background:#2c2c3e; color:#e8e4da; font-size:0.68rem;
+    letter-spacing:0.02em; text-align:center; padding:0.6rem 0.7rem; font-weight:500;
+    border-right:1px solid #3a3a4e; white-space:nowrap;
+  }
+  td {
+    padding:0.55rem 0.7rem; font-size:0.78rem;
+    text-align:center; border-right:1px solid var(--light-rule); border-bottom:1px solid var(--light-rule);
+    color:var(--ink); white-space:nowrap;
+  }
+  td:first-child { font-weight:600; white-space:nowrap; }
+  tr:last-child td { border-bottom:none; }
+  tr.total-row td { background:#f0ece0; font-weight:700; border-top:2px solid var(--rule); }
+  tr.initial-row td { background:#fafaf7; }
+
+  .footnote { font-size:0.62rem; color:var(--muted); border-top:1px solid var(--light-rule); padding-top:0.75rem; line-height:1.9; margin-bottom:1.2rem; }
+  .footnote strong { color:var(--ink); }
+
+  /* Action buttons */
+  .action-bar { display:flex; gap:0.6rem; flex-wrap:wrap; }
+  .btn {
+    flex:1; min-width:80px; padding:0.8rem 0.5rem;
+    font-family:'Noto Sans KR',sans-serif; font-size:0.8rem; font-weight:600;
+    border:none; cursor:pointer; letter-spacing:0.04em; transition:opacity 0.15s;
+    display:flex; align-items:center; justify-content:center; gap:0.35rem;
+  }
+  .btn:hover { opacity:0.82; }
+  .btn-print { background:var(--ink); color:var(--paper); }
+  .btn-save  { background:var(--accent); color:white; }
+  .btn-reset { background:white; color:var(--ink); border:1.5px solid var(--rule); }
+  .print-date { display:none; }
+
+  @media print {
+    .print-date {
+      display:block; font-size:0.72rem; color:#555;
+      margin-bottom:0.8rem; text-align:right;
+    }
+    .inputs-section, .action-bar { display:none !important; }
+    body { background:white; padding:0.5rem; }
+    .table-scroll { overflow:visible; }
+    .table-scroll table { min-width:unset; }
+    .results-section .section-label, .insurance-section .section-label,
+    th, tr.total-row td, tr.initial-row td {
+      -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-top">
+      <h1>연부연납 계산기</h1>
+      <span class="subtitle">상속세 · 증여세</span>
+    </div>
+  </div>
+
+  <div class="print-date" id="printDate"></div>
+
+  <div class="inputs-section">
+    <div class="section-label">입력 항목</div>
+    <div class="inputs-grid">
+      <div class="field">
+        <label>총 납부세액</label>
+        <div class="input-wrap">
+          <input type="text" id="totalTax" value="0" oninput="formatAndCalc(this)" inputmode="numeric" />
+          <span class="unit">원</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>연부연납 기간</label>
+        <div class="period-select">
+          <select id="period" onchange="calculate()"></select>
+          <div class="max-period-note" id="maxNote"></div>
+          <div class="period-info">일반 상속세 최대 10년<br>일반 증여세 최대 5년</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>가산율</label>
+        <div class="input-wrap">
+          <input type="number" id="surchargeRate" value="3.1" step="0.01" min="0" oninput="calculate()" inputmode="decimal" />
+          <span class="unit">%/년</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>보험요율</label>
+        <div class="input-wrap">
+          <input type="number" id="insuranceRate" value="0.748" step="0.001" min="0" oninput="calculate()" inputmode="decimal" />
+          <span class="unit">%/년</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-item">
+      <div class="s-label">자진납부세액 (신고기한)</div>
+      <div class="s-value" id="s-initial">—</div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label">연부연납 총세액</div>
+      <div class="s-value" id="s-installTotal">—</div>
+    </div>
+    <div class="summary-item accent">
+      <div class="s-label">가산금 합계</div>
+      <div class="s-value" id="s-surchargeTotal">—</div>
+    </div>
+    <div class="summary-item">
+      <div class="s-label">보험료 합계</div>
+      <div class="s-value" id="s-insuranceTotal">—</div>
+    </div>
+  </div>
+
+  <div class="results-section">
+    <div class="section-label">연부연납 납부 일정</div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>구분</th><th>본세</th><th>가산금대상</th><th>가산금</th><th>합계 (연부연납액)</th></tr></thead>
+        <tbody id="mainBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="insurance-section">
+    <div class="section-label">보증보험 가입 내역 (납부액 × 110% 기준)</div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>구분</th><th>연부연납액</th><th>보험가입액 (110%)</th><th>예상보험료</th></tr></thead>
+        <tbody id="insBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <strong>※ 연부연납가산금 계산 방식</strong><br>
+    · 1회차: 연부연납 총세액 × 분할납부기간(1년) × 가산율<br>
+    · 이후 회차: (연부연납 총세액 − 기납부세액 누계) × 분할납부기간(1년) × 가산율<br>
+    · 각 회분의 분할납부세액이 <strong>1,000만원을 초과</strong>하도록 연부연납기간을 설정해야 합니다.<br>
+    · 보증보험료 = 연부연납액(본세+가산금) × 110% × 보험요율
+  </div>
+
+  <div class="action-bar">
+    <button class="btn btn-print" onclick="printPage()">🖨 인쇄하기</button>
+    <button class="btn btn-save"  onclick="saveText()">💾 저장하기</button>
+    <button class="btn btn-reset" onclick="resetAll()">↺ 초기화</button>
+  </div>
+
+</div>
+
+<script>
+function fmt(n){ return Math.round(n).toLocaleString('ko-KR'); }
+function parseNum(s){ return parseFloat(String(s).replace(/,/g,''))||0; }
+function formatAndCalc(el){
+  const raw=el.value.replace(/,/g,'').replace(/[^0-9]/g,'');
+  const num=parseInt(raw)||0;
+  el.value=num.toLocaleString('ko-KR');
+  calculate();
+}
+function getMaxPeriod(total){ return Math.max(1,Math.floor(total/10000000)-1); }
+function populatePeriod(total){
+  const sel=document.getElementById('period');
+  const maxN=getMaxPeriod(total);
+  const prev=parseInt(sel.value)||maxN;
+  sel.innerHTML='';
+  for(let i=1;i<=maxN;i++){
+    const opt=document.createElement('option');
+    opt.value=i; opt.textContent=i+'년'+(i===maxN?' (최대)':'');
+    sel.appendChild(opt);
+  }
+  sel.value=Math.min(prev,maxN)||maxN;
+  document.getElementById('maxNote').textContent='최대 '+maxN+'년 (회분당 1,000만원 초과)';
+}
+function clearResults(){
+  ['s-initial','s-installTotal','s-surchargeTotal','s-insuranceTotal']
+    .forEach(id=>{ document.getElementById(id).textContent='—'; });
+  document.getElementById('mainBody').innerHTML='';
+  document.getElementById('insBody').innerHTML='';
+  document.getElementById('period').innerHTML='';
+  document.getElementById('maxNote').textContent='';
+}
+function buildRows(total,n,surchargeRate,insuranceRate){
+  const perPayment=total/(n+1);
+  const installTotal=total-perPayment;
+  const rows=[];
+  let totalSurcharge=0,totalInsurance=0,totalInstallPay=0;
+  for(let k=1;k<=n;k++){
+    const remaining=installTotal-(k-1)*perPayment;
+    const surcharge=remaining*surchargeRate;
+    const installPayment=perPayment+surcharge;
+    const insBase=installPayment*1.1;
+    const insAmount=insBase*insuranceRate;
+    totalSurcharge+=surcharge; totalInsurance+=insAmount; totalInstallPay+=installPayment;
+    rows.push({k,base:perPayment,surchargeBase:remaining,surcharge,total:installPayment,insBase,insAmount});
+  }
+  return {rows,initial:perPayment,totalSurcharge,totalInsurance,totalInstallPay};
+}
+function calculate(){
+  const total=parseNum(document.getElementById('totalTax').value);
+  const surchargeRate=parseFloat(document.getElementById('surchargeRate').value)/100||0;
+  const insuranceRate=parseFloat(document.getElementById('insuranceRate').value)/100||0;
+  if(total<=0){ clearResults(); return; }
+  populatePeriod(total);
+  const n=parseInt(document.getElementById('period').value)||1;
+  const {rows,initial,totalSurcharge,totalInsurance,totalInstallPay}=buildRows(total,n,surchargeRate,insuranceRate);
+  document.getElementById('s-initial').textContent=fmt(initial)+'원';
+  document.getElementById('s-installTotal').textContent=fmt(total)+'원';
+  document.getElementById('s-surchargeTotal').textContent=fmt(totalSurcharge)+'원';
+  document.getElementById('s-insuranceTotal').textContent=fmt(totalInsurance)+'원';
+  const mb=document.getElementById('mainBody');
+  mb.innerHTML='';
+  const ir=document.createElement('tr'); ir.className='initial-row';
+  ir.innerHTML=`<td>자진납부</td><td>${fmt(initial)}</td><td>—</td><td>—</td><td>${fmt(initial)}</td>`;
+  mb.appendChild(ir);
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.k}회차</td><td>${fmt(r.base)}</td><td>${fmt(r.surchargeBase)}</td><td>${fmt(r.surcharge)}</td><td>${fmt(r.total)}</td>`;
+    mb.appendChild(tr);
+  });
+  const tr2=document.createElement('tr'); tr2.className='total-row';
+  tr2.innerHTML=`<td>합계</td><td>${fmt(rows.reduce((a,r)=>a+r.base,0))}</td><td>—</td><td>${fmt(totalSurcharge)}</td><td>${fmt(totalInstallPay+initial)}</td>`;
+  mb.appendChild(tr2);
+  const ib=document.getElementById('insBody'); ib.innerHTML='';
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.k}회차</td><td>${fmt(r.total)}</td><td>${fmt(r.insBase)}</td><td>${fmt(r.insAmount)}</td>`;
+    ib.appendChild(tr);
+  });
+  const tr3=document.createElement('tr'); tr3.className='total-row';
+  tr3.innerHTML=`<td>합계</td><td>${fmt(totalInstallPay)}</td><td>${fmt(rows.reduce((a,r)=>a+r.insBase,0))}</td><td>${fmt(totalInsurance)}</td>`;
+  ib.appendChild(tr3);
+}
+function printPage(){
+  const now=new Date();
+  const d=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+  document.getElementById('printDate').textContent='출력일: '+d;
+  window.print();
+}
+function resetAll(){
+  document.getElementById('totalTax').value='0';
+  document.getElementById('surchargeRate').value='3.1';
+  document.getElementById('insuranceRate').value='0.748';
+  clearResults();
+}
+function saveText(){
+  const total=parseNum(document.getElementById('totalTax').value);
+  if(total<=0){ alert('납부세액을 먼저 입력해주세요.'); return; }
+  const srPct=parseFloat(document.getElementById('surchargeRate').value);
+  const irPct=parseFloat(document.getElementById('insuranceRate').value);
+  const n=parseInt(document.getElementById('period').value)||1;
+  const {rows,initial,totalSurcharge,totalInsurance,totalInstallPay}=buildRows(total,n,srPct/100,irPct/100);
+  const now=new Date();
+  const d=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+  const sep='─'.repeat(72);
+  const W=(s,n)=>String(s).padEnd(n,' ');
+  let t='';
+  t+='연부연납 계산 결과\n';
+  t+=sep+'\n';
+  t+=`작성일        : ${d}\n`;
+  t+=`총 납부세액   : ${fmt(total)}원\n`;
+  t+=`연부연납 기간 : ${n}년  |  가산율: ${srPct}%  |  보험요율: ${irPct}%\n`;
+  t+=sep+'\n\n';
+  t+='[ 연부연납 납부 일정 ]\n';
+  t+=sep+'\n';
+  t+=W('구분',8)+W('본세',16)+W('가산금대상',16)+W('가산금',16)+'합계(연부연납액)\n';
+  t+=sep+'\n';
+  t+=W('자진납부',8)+W(fmt(initial)+'원',16)+W('—',16)+W('—',16)+fmt(initial)+'원\n';
+  rows.forEach(r=>{
+    t+=W(r.k+'회차',8)+W(fmt(r.base)+'원',16)+W(fmt(r.surchargeBase)+'원',16)+W(fmt(r.surcharge)+'원',16)+fmt(r.total)+'원\n';
+  });
+  t+=sep+'\n';
+  t+=W('합계',8)+W(fmt(rows.reduce((a,r)=>a+r.base,0))+'원',16)+W('—',16)+W(fmt(totalSurcharge)+'원',16)+fmt(totalInstallPay+initial)+'원\n';
+  t+=sep+'\n\n';
+  t+='[ 보증보험 가입 내역 (납부액 × 110% 기준) ]\n';
+  t+=sep+'\n';
+  t+=W('구분',8)+W('연부연납액',18)+W('보험가입액(110%)',20)+'예상보험료\n';
+  t+=sep+'\n';
+  rows.forEach(r=>{
+    t+=W(r.k+'회차',8)+W(fmt(r.total)+'원',18)+W(fmt(r.insBase)+'원',20)+fmt(r.insAmount)+'원\n';
+  });
+  t+=sep+'\n';
+  t+=W('합계',8)+W(fmt(totalInstallPay)+'원',18)+W(fmt(rows.reduce((a,r)=>a+r.insBase,0))+'원',20)+fmt(totalInsurance)+'원\n';
+  t+=sep+'\n';
+  const blob=new Blob([t],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`연부연납_계산결과_${d}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+calculate();
+</script>
+</body>
+</html>
