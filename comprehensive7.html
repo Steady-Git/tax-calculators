@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>종합부동산세 계산기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #f0ede6;
+      font-family: 'Noto Sans KR', sans-serif;
+      padding: 0 0 4rem;
+      color: #1a1a1a;
+    }
+
+    /* ── 전체 래퍼: 상단 앱바는 풀너비, 나머지는 중앙 정렬 ── */
+    .card {
+      max-width: 100%;
+      margin: 0 auto;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      overflow: visible;
+    }
+
+    /* 헤더·본문 내부를 가운데 정렬로 제한 */
+    .card-inner {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 1.4rem;
+    }
+
+    /* ── 상단 앱바 ── */
+    .card-topbar {
+      background: #1c1a15;
+      padding: 14px 0;
+      display: flex; align-items: center;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .card-topbar-inner {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 1.4rem;
+      width: 100%;
+    }
+    .card-topbar span { font-size: 1rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
+
+    /* ── 헤더 ── */
+    .card-header {
+      padding: 2.4rem 0 2.4rem;
+      background: #1c1a15;
+      border-bottom: none;
+    }
+    .card-header-eyebrow {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+      color: #c8a84b; text-transform: uppercase; margin-bottom: 14px;
+    }
+    .card-header-eyebrow::before {
+      content: ''; display: block; width: 28px; height: 2px; background: #c8a84b;
+    }
+    .card-header h1 {
+      font-size: 2.6rem; font-weight: 800; letter-spacing: -0.03em;
+      color: #fff; line-height: 1.15; margin-bottom: 16px;
+    }
+    .card-header p { font-size: 0.9rem; color: rgba(255,255,255,0.5); line-height: 1.8; }
+
+    /* ── 본문 ── */
+    .card-body { padding: 2rem 0 2rem; }
+
+    /* ── 헤더-본문 구분선 ── */
+    .card-divider {
+      height: 1px; background: #d6d0c4; margin: 0;
+    }
+
+    /* ── 입력 섹션 박스 ── */
+    .input-section {
+      background: #fff;
+      border: 1.5px solid #d6d0c4;
+      border-radius: 14px;
+      padding: 18px 16px;
+      margin-bottom: 12px;
+    }
+    .input-section-title {
+      font-size: 0.95rem; font-weight: 700; color: #1a1a1a;
+      margin-bottom: 4px;
+    }
+    .input-section-sub {
+      font-size: 0.78rem; color: #999; margin-bottom: 14px;
+    }
+
+    /* ── 섹션 라벨 ── */
+    .section-label {
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em;
+      color: #888; margin-bottom: 10px; margin-top: 26px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    .radio-group { display: flex; gap: 0; margin-bottom: 4px; border-radius: 10px; overflow: hidden; border: 1.5px solid #d6d0c4; }
+    .radio-btn {
+      flex: 1; padding: 14px 0; border-radius: 0;
+      border: none; border-right: 1.5px solid #d6d0c4;
+      background: #fff; color: #555;
+      font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.18s;
+      text-align: center; font-family: 'Noto Sans KR', sans-serif; line-height: 1.5;
+    }
+    .radio-btn:last-child { border-right: none; }
+    .radio-btn.active { background: #1c1a15; color: #c8a84b; font-weight: 700; }
+    .radio-btn small  { display: block; font-size: 0.73rem; opacity: 0.65; font-weight: 400; margin-top: 2px; }
+    .radio-btn.active small { opacity: 0.8; color: rgba(200,168,75,0.8); }
+
+    .house-list { display: flex; flex-direction: column; gap: 10px; }
+    .house-row  { display: flex; gap: 8px; align-items: center; }
+
+    .input-wrap { flex: 1; position: relative; }
+    .input-wrap input {
+      width: 100%; padding: 14px 48px 14px 16px; border-radius: 10px;
+      border: 1.5px solid #d6d0c4; background: #fff;
+      color: #1a1a1a; font-size: 1rem; outline: none;
+      font-family: 'Noto Sans KR', sans-serif; transition: border-color 0.2s;
+    }
+    .input-wrap input:focus { border-color: #c8a84b; }
+    .input-wrap input::placeholder { color: #bbb; }
+    .input-suffix {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      color: #999; font-size: 0.85rem; pointer-events: none;
+    }
+
+    .remove-btn {
+      padding: 12px 14px; border-radius: 10px; border: 1.5px solid #f0d0d0;
+      background: #fff; color: #e07070; cursor: pointer; font-size: 1rem;
+      transition: background 0.18s; font-family: 'Noto Sans KR', sans-serif;
+    }
+    .remove-btn:hover { background: #fff0f0; }
+
+    .add-btn {
+      width: 100%; padding: 13px; margin-top: 10px; border-radius: 10px;
+      border: 1.5px dashed #c8b88a; background: rgba(200,168,75,0.05);
+      color: #a08040; cursor: pointer; font-size: 0.9rem; font-weight: 600;
+      transition: all 0.18s; font-family: 'Noto Sans KR', sans-serif;
+    }
+    .add-btn:hover { background: rgba(200,168,75,0.1); border-color: #a08040; }
+
+    .calc-btn {
+      width: 100%; padding: 16px; margin-top: 24px; border-radius: 12px; border: none;
+      background: #1c1a15; color: #c8a84b;
+      font-weight: 800; font-size: 1.05rem; cursor: pointer; letter-spacing: 0.03em;
+      transition: transform 0.15s, opacity 0.15s;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    .calc-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .calc-btn:active { transform: translateY(0); }
+
+    /* ── 결과 카드 ── */
+    .result-card {
+      margin-top: 28px; border-radius: 14px; border: 1.5px solid #d6d0c4;
+      overflow: hidden; background: #fff; animation: fadeIn 0.35s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    .result-header {
+      padding: 13px 20px; background: #1c1a15;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em;
+      color: #c8a84b; text-transform: uppercase;
+    }
+    .result-rows { padding: 6px 0; }
+    .result-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 20px; font-size: 0.88rem;
+    }
+    .result-label { color: #777; }
+    .result-value { font-weight: 600; color: #1a1a1a; }
+    .result-divider { height: 1px; background: #eee; margin: 3px 0; }
+
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 6px;
+      font-size: 0.72rem; font-weight: 700; margin-left: 8px; vertical-align: middle;
+    }
+    .badge-normal { background: #eafaf2; color: #1a8a50; }
+    .badge-heavy  { background: #fff0f0; color: #c0392b; }
+
+    .total-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 20px; background: #1c1a15;
+      border-top: 1.5px solid #d6d0c4;
+    }
+    .total-label { font-weight: 700; font-size: 1rem; color: #c8a84b; }
+    .total-value { font-weight: 800; font-size: 1.25rem; color: #fff; }
+
+    .msg-box { padding: 16px 20px; color: #777; font-size: 0.9rem; line-height: 1.7; }
+
+    /* ── 계산 과정 토글 버튼 ── */
+    .process-toggle {
+      width: 100%; padding: 13px 20px; border: none;
+      background: #f7f4ef; color: #888;
+      cursor: pointer; font-size: 0.82rem; font-weight: 600;
+      font-family: 'Noto Sans KR', sans-serif;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: background 0.18s, color 0.18s; letter-spacing: 0.02em;
+      border-top: 1px solid #e8e4dc;
+    }
+    .process-toggle:hover { background: #edeae2; color: #555; }
+    .process-toggle .arrow { transition: transform 0.3s; display: inline-block; font-size: 0.7rem; }
+    .process-toggle.open   { color: #a08040; background: #fdf8ee; }
+    .process-toggle.open .arrow { transform: rotate(180deg); }
+
+    /* ── 계산 과정 본문 (아코디언) ── */
+    .process-body {
+      overflow: hidden; max-height: 0;
+      transition: max-height 0.45s cubic-bezier(0.4,0,0.2,1);
+      border-top: 1px solid #e8e4dc;
+    }
+    .process-body.open { max-height: 3000px; }
+    .process-inner { padding: 18px 16px 22px; display: flex; flex-direction: column; gap: 12px; background: #f7f4ef; }
+
+    /* ── 각 STEP 카드 ── */
+    .step { border-radius: 11px; overflow: hidden; border: 1.5px solid #e2ddd5; background: #fff; }
+
+    .step-title {
+      padding: 9px 14px; font-size: 0.73rem; font-weight: 700;
+      letter-spacing: 0.07em; text-transform: uppercase;
+    }
+    .step-title.blue   { background: #e8f4fb; color: #1a6a9a; }
+    .step-title.green  { background: #e8f8f0; color: #1a7a4a; }
+    .step-title.orange { background: #fdf3e3; color: #9a5a10; }
+    .step-title.purple { background: #f2eeff; color: #6a30bb; }
+    .step-title.teal   { background: #e3f8f5; color: #1a7a6a; }
+    .step-title.red    { background: #fdeaea; color: #aa2a2a; }
+
+    .step-content {
+      padding: 13px 14px 15px;
+      font-size: 0.83rem; line-height: 1.85;
+      color: #555;
+      background: #fff;
+    }
+
+    /* ── 수식 블록 ── */
+    .formula {
+      background: #f7f4ef; border-radius: 8px;
+      padding: 11px 14px; margin: 10px 0 2px;
+      font-size: 0.83rem; color: #777; line-height: 2;
+      border-left: 3px solid #c8a84b;
+    }
+    .formula .hi  { color: #1a1a1a; font-weight: 700; }
+    .formula .ans { color: #a08030; font-weight: 800; font-size: 0.92rem; }
+    .formula .sub { color: #aaa; font-size: 0.77rem; }
+    .formula .note {
+      display: inline-block; margin-top: 4px; padding: 2px 8px;
+      border-radius: 5px; background: #fdf3e0;
+      color: #a08030; font-size: 0.75rem;
+    }
+
+    /* ── 재산세 테이블 ── */
+    .sub-table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 8px;
+      border-radius: 6px;
+    }
+    .sub-table-wrap::-webkit-scrollbar { height: 4px; }
+    .sub-table-wrap::-webkit-scrollbar-track { background: #eee; border-radius: 3px; }
+    .sub-table-wrap::-webkit-scrollbar-thumb { background: #c8a84b; border-radius: 3px; }
+    .sub-table {
+      width: 100%;
+      min-width: 0;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      table-layout: auto;
+      word-break: keep-all;
+      border: 1px solid #d6d0c4;
+    }
+    .sub-table th {
+      padding: 8px 8px; text-align: center; color: #777;
+      font-weight: 700; border-bottom: 1.5px solid #c8a84b; font-size: 0.72rem;
+      white-space: nowrap;
+      border-right: 1px solid #d6d0c4;
+      background: #fdf8ee;
+    }
+    .sub-table th:last-child { border-right: none; }
+    .sub-table th:first-child { width: 38%; }
+    .sub-table th:nth-child(2),
+    .sub-table th:nth-child(3) { width: 20%; }
+    .sub-table th:nth-child(4) { width: 10%; }
+    .sub-table th:nth-child(5) { width: 12%; }
+    .sub-table td {
+      padding: 7px 8px; border-bottom: 1px solid #e8e4dc; color: #555;
+      font-size: 0.78rem; text-align: center;
+      border-right: 1px solid #e8e4dc;
+    }
+    .sub-table td:last-child { border-right: none; }
+    .sub-table td:first-child { text-align: left; }
+    .sub-table tr:last-child td { border-bottom: none; background: #fdf8ee; }
+    .td-right { text-align: center; font-weight: 600; color: #1a1a1a; }
+    .td-sum   { color: #a08030 !important; font-weight: 700 !important; }
+
+    .notice {
+      margin-top: 20px; padding: 14px 16px; border-radius: 10px;
+      background: #fdf8ee; border: 1.5px solid #e8d8a0;
+      font-size: 0.78rem; color: #a08040; line-height: 1.7;
+    }
+
+    /* ── 하단 액션 버튼 ── */
+    .action-bar {
+      display: flex; gap: 10px; margin-top: 20px;
+    }
+    .action-btn {
+      flex: 1; padding: 14px 0; border-radius: 12px; border: none;
+      font-size: 0.9rem; font-weight: 700; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .action-btn:hover  { transform: translateY(-1px); opacity: 0.88; }
+    .action-btn:active { transform: translateY(0); }
+
+    .btn-print {
+      background: #1c1a15; color: #c8a84b;
+    }
+    .btn-save {
+      background: #1a4a2a; color: #5ad88a;
+    }
+    .btn-reset {
+      background: #fff; border: 1.5px solid #d6d0c4 !important;
+      color: #888;
+    }
+    .btn-reset:hover { background: #fff0f0; border-color: #f0b0b0 !important; color: #c05050; }
+
+    /* ── 인쇄 스타일 ── */
+    @media print {
+      @page { size: A4; margin: 12mm 14mm; }
+
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+      body {
+        background: #fff !important;
+        color: #1a1a2e !important;
+        padding: 0 !important;
+        font-size: 11px !important;
+      }
+
+      .card {
+        max-width: 100% !important;
+        background: #fff !important;
+        border: none !important;
+        border-radius: 0 !important;
+        backdrop-filter: none !important;
+        box-shadow: none !important;
+      }
+
+      .card-topbar { display: none !important; }
+      .card-divider { display: none !important; }
+      .input-section { display: none !important; }
+
+      .card-header {
+        background: #1a3a5c !important;
+        padding: 10px 16px !important;
+        border-radius: 0 !important;
+      }
+      .card-header-eyebrow { color: #8ab !important; font-size: 8px !important; margin-bottom: 6px !important; }
+      .card-header h1 { color: #fff !important; font-size: 16px !important; }
+      .card-header p  { color: rgba(255,255,255,0.7) !important; font-size: 10px !important; }
+
+      .card-body { padding: 10px 16px !important; }
+
+      /* 입력 섹션 숨기기 */
+      .section-label, .radio-group, .house-list,
+      .add-btn, .calc-btn, .notice, .action-bar { display: none !important; }
+
+      /* 직전연도 입력 숨기기 (label도) */
+      .card-body > .section-label,
+      .card-body > .input-wrap { display: none !important; }
+
+      /* 결과카드 */
+      .result-card {
+        margin-top: 0 !important;
+        border: 1.5px solid #0083b0 !important;
+        border-radius: 8px !important;
+        animation: none !important;
+        background: #f8fbff !important;
+      }
+
+      .result-header {
+        background: #0083b0 !important;
+        color: #fff !important;
+        padding: 7px 14px !important;
+        font-size: 9px !important;
+      }
+
+      .result-row { padding: 5px 14px !important; font-size: 11px !important; }
+      .result-label { color: #444 !important; }
+      .result-value { color: #1a1a2e !important; }
+      .result-divider { background: #dde !important; }
+
+      .badge-normal { background: #e0fff0 !important; color: #007a45 !important; }
+      .badge-heavy  { background: #fff0f0 !important; color: #c0392b !important; }
+
+      .total-row {
+        background: #e8f4fb !important;
+        border-top: 1.5px solid #0083b0 !important;
+        padding: 9px 14px !important;
+      }
+      .total-label { color: #0083b0 !important; font-size: 12px !important; }
+      .total-value { color: #1a1a2e !important; font-size: 14px !important; }
+
+      /* 계산 과정 펼쳐서 인쇄 */
+      .process-toggle { display: none !important; }
+      .process-body   { max-height: none !important; overflow: visible !important; border-top: 1.5px solid #dde !important; }
+      .process-inner  { padding: 8px 10px 10px !important; gap: 7px !important; }
+
+      .step { border: 1px solid #ccd !important; border-radius: 6px !important; break-inside: avoid; }
+
+      .step-title { padding: 5px 10px !important; font-size: 8px !important; }
+      .step-title.blue   { background: #d6eef8 !important; color: #0069a0 !important; }
+      .step-title.green  { background: #d6f5e8 !important; color: #006644 !important; }
+      .step-title.orange { background: #fdf0d8 !important; color: #8a5500 !important; }
+      .step-title.purple { background: #ede8fc !important; color: #5b21b6 !important; }
+      .step-title.teal   { background: #d6f5f2 !important; color: #005f57 !important; }
+      .step-title.red    { background: #fde8e8 !important; color: #9b1c1c !important; }
+
+      .step-content {
+        background: #fff !important; padding: 7px 10px 8px !important;
+        font-size: 10px !important; color: #333 !important; line-height: 1.6 !important;
+      }
+
+      .formula {
+        background: #f4f6fa !important; border-left: 3px solid #0083b0 !important;
+        padding: 6px 10px !important; margin: 5px 0 0 !important;
+        font-size: 10px !important; color: #555 !important; line-height: 1.7 !important;
+        border-radius: 4px !important;
+      }
+      .formula .hi  { color: #1a1a2e !important; }
+      .formula .ans { color: #0069a0 !important; }
+      .formula .sub { color: #888 !important; }
+      .formula .note { background: #e0f0fb !important; color: #0069a0 !important; }
+
+      .sub-table { font-size: 9px !important; }
+      .sub-table th { color: #666 !important; border-bottom-color: #ccd !important; }
+      .sub-table td { color: #333 !important; border-bottom-color: #eef !important; }
+      .td-right { color: #1a1a2e !important; }
+      .td-sum   { color: #0069a0 !important; }
+
+      /* 인쇄 푸터 */
+      .print-footer {
+        display: block !important;
+        margin-top: 8px; font-size: 8px; color: #aaa;
+        text-align: right; border-top: 1px solid #eee; padding-top: 4px;
+      }
+    }
+
+    /* 화면에서 인쇄 푸터 숨기기 */
+    .print-footer { display: none; }
+
+    @media (max-width: 480px) {
+      .card-inner     { padding: 0 1rem; }
+      .card-body      { padding: 1.2rem 0; }
+      .card-header h1 { font-size: 1.85rem; }
+      .input-section  { padding: 14px 14px; border-radius: 12px; }
+      .process-inner  { padding: 14px 12px 16px; }
+      .sub-table      { font-size: 0.72rem; }
+      .action-bar     { flex-wrap: wrap; }
+      .action-btn     { font-size: 0.82rem; padding: 12px 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="card-topbar">
+    <div class="card-topbar-inner">
+      <span>종합부동산세 계산기</span>
+    </div>
+  </div>
+  <div class="card-header">
+    <div class="card-inner">
+      <div class="card-header-eyebrow">COMPREHENSIVE REAL ESTATE TAX · 종합부동산세 자동 산출</div>
+      <h1>종합부동산세<br>계산기</h1>
+      <p>주택분 종합부동산세를 과세표준 기준으로 산출합니다.<br>공제할 재산세액, 세부담상한을 포함한 납부세액을 확인하세요.</p>
+    </div>
+  </div>
+  <div class="card-divider"></div>
+
+  <div class="card-body">
+    <div class="card-inner">
+
+    <!-- 보유 유형 섹션 -->
+    <div class="input-section">
+      <div class="input-section-title">보유 유형</div>
+      <div class="input-section-sub">해당하는 보유 유형을 선택하세요</div>
+      <div class="radio-group">
+        <button class="radio-btn active" id="btn-one" onclick="setHouseType('1')">
+          1세대 1주택자<small>공제 12억원</small>
+        </button>
+        <button class="radio-btn" id="btn-multi" onclick="setHouseType('0')">
+          일반 / 다주택자<small>공제 9억원</small>
+        </button>
+      </div>
+    </div>
+
+    <!-- 주택별 공시가격 섹션 -->
+    <div class="input-section">
+      <div class="input-section-title">주택별 공시가격 입력</div>
+      <div class="input-section-sub">보유 주택마다 공시가격을 입력하세요</div>
+      <div class="house-list" id="house-list"></div>
+      <button class="add-btn" onclick="addHouse()">+ 주택 추가</button>
+    </div>
+
+    <!-- 직전연도 세액 섹션 -->
+    <div class="input-section">
+      <div class="input-section-title">직전연도 재산세＋종합부동산세 합계 <span style="font-size:0.8rem;color:#bbb;font-weight:400;">(선택)</span></div>
+      <div class="input-section-sub">세부담상한 계산용 — 입력 시 150% 한도 적용</div>
+      <div class="input-wrap">
+        <input type="text" inputmode="numeric" id="prev-year-tax"
+          placeholder="0"
+          oninput="this.value=toComma(this.value)" />
+        <span class="input-suffix">원</span>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">계산하기</button>
+
+    <div id="result-area"></div>
+
+    <div class="notice">
+      ⚠️ 본 계산기는 참고용이며, 세액공제(고령자·장기보유) 및 개별 감면은 반영되지 않습니다.
+    </div>
+
+    <!-- 하단 액션 버튼 -->
+    <div class="action-bar">
+      <button class="action-btn btn-print" onclick="printResult()">🖨️ 인쇄하기</button>
+      <button class="action-btn btn-save"  onclick="saveResult()">💾 저장하기</button>
+      <button class="action-btn btn-reset" onclick="resetAll()">↺ 초기화</button>
+    </div>
+
+    <!-- 인쇄 시에만 보이는 푸터 -->
+    <div class="print-footer" id="print-footer"></div>
+    </div><!-- /.card-inner -->
+  </div>
+</div>
+
+<script>
+  const TAX_BRACKETS = [
+    { max:300000000,  baseRate:0.005, baseDeduction:0,         heavyRate:0.005, heavyDeduction:0         },
+    { max:600000000,  baseRate:0.007, baseDeduction:600000,    heavyRate:0.007, heavyDeduction:600000    },
+    { max:1200000000, baseRate:0.010, baseDeduction:2400000,   heavyRate:0.010, heavyDeduction:2400000   },
+    { max:2500000000, baseRate:0.013, baseDeduction:6000000,   heavyRate:0.020, heavyDeduction:14400000  },
+    { max:5000000000, baseRate:0.015, baseDeduction:11000000,  heavyRate:0.030, heavyDeduction:39400000  },
+    { max:9400000000, baseRate:0.020, baseDeduction:36000000,  heavyRate:0.040, heavyDeduction:89400000  },
+    { max:Infinity,   baseRate:0.027, baseDeduction:101800000, heavyRate:0.050, heavyDeduction:183400000 },
+  ];
+
+  let houseType = '1', houseId = 1;
+  let houses = [{ id: houseId++ }];
+
+  const fmt  = n => (n===null||n===undefined) ? '-' : Math.round(n).toLocaleString('ko-KR')+'원';
+  const pct  = r => (r*100).toFixed(1)+'%';
+
+  // 주택분 재산세 세율 (과세표준 기준)
+  // 과세표준 = 공시가격 × 60%
+  // 6천만원 이하: 0.1%, 누진공제 없음
+  // 6천만원 초과 ~ 1.5억 이하: 0.15%, 누진공제 30,000원
+  // 1.5억 초과 ~ 3억 이하: 0.25%, 누진공제 180,000원
+  // 3억 초과: 0.40%, 누진공제 630,000원
+  function calcPropertyTax(p) {
+    const b = p * 0.6; // 과세표준
+    if (b <= 60000000)  return b * 0.001;
+    if (b <= 150000000) return b * 0.0015 - 30000;
+    if (b <= 300000000) return b * 0.0025 - 180000;
+    return b * 0.004 - 630000;
+  }
+  function propTaxRateLabel(p) {
+    const b = p * 0.6;
+    if (b <= 60000000)  return '0.1%';
+    if (b <= 150000000) return '0.15%';
+    if (b <= 300000000) return '0.25%';
+    return '0.4%';
+  }
+  function propTaxRate(p) {
+    const b = p * 0.6;
+    if (b <= 60000000)  return 0.001;
+    if (b <= 150000000) return 0.0015;
+    if (b <= 300000000) return 0.0025;
+    return 0.004;
+  }
+  function propTaxProgDed(p) {
+    const b = p * 0.6;
+    if (b <= 60000000)  return 0;
+    if (b <= 150000000) return 30000;
+    if (b <= 300000000) return 180000;
+    return 630000;
+  }
+  // 전체 주택 재산세 합계: 공시가격 합산 후 60% × 세율 - 누진공제
+  function calcTotalPropertyTaxOnSum(totalPrice) {
+    const b = totalPrice * 0.6;
+    if (b <= 60000000)  return { tax: b * 0.001,          rate: 0.001,  ded: 0,       rateLabel: '0.1%'  };
+    if (b <= 150000000) return { tax: b * 0.0015 - 30000,  rate: 0.0015, ded: 30000,   rateLabel: '0.15%' };
+    if (b <= 300000000) return { tax: b * 0.0025 - 180000, rate: 0.0025, ded: 180000,  rateLabel: '0.25%' };
+    return                     { tax: b * 0.004 - 630000,  rate: 0.004,  ded: 630000,  rateLabel: '0.4%'  };
+  }
+
+  // ── 천단위 쉼표 포매팅 ────────────────────────────────────
+  function toComma(str) {
+    const digits = str.replace(/[^0-9]/g, '');
+    if (!digits) return '';
+    return parseInt(digits, 10).toLocaleString('ko-KR');
+  }
+  function fromComma(str) {
+    return parseFloat(str.replace(/,/g, '')) || 0;
+  }
+
+  function handleCommaInput(el, id) {
+    const raw = el.value;
+    const cursor = el.selectionStart;
+    const prevLen = raw.length;
+    const formatted = toComma(raw);
+    el.value = formatted;
+    // 커서 위치 보정 (쉼표 삽입으로 늘어난 만큼 이동)
+    const diff = formatted.length - prevLen;
+    el.setSelectionRange(cursor + diff, cursor + diff);
+    const h = houses.find(h => h.id === id);
+    if (h) h.value = formatted;
+  }
+
+  function setHouseType(v) {
+    houseType = v;
+    document.getElementById('btn-one').classList.toggle('active', v==='1');
+    document.getElementById('btn-multi').classList.toggle('active', v==='0');
+  }
+
+  function renderHouses() {
+    const list = document.getElementById('house-list');
+    list.innerHTML = '';
+    houses.forEach((h, i) => {
+      const row = document.createElement('div');
+      row.className = 'house-row';
+      row.innerHTML = `
+        <div class="input-wrap">
+          <input type="text" inputmode="numeric" id="house-${h.id}"
+            placeholder="주택 ${i+1} 공시가격 (예: 800,000,000)"
+            value="${h.value||''}" oninput="handleCommaInput(this,${h.id})" />
+          <span class="input-suffix">원</span>
+        </div>
+        ${houses.length>1 ? `<button class="remove-btn" onclick="removeHouse(${h.id})">✕</button>` : ''}
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  function addHouse()      { houses.push({ id: houseId++ }); renderHouses(); }
+  function removeHouse(id) { houses = houses.filter(h => h.id !== id); renderHouses(); }
+  function updateHouseValue(id,val) { const h = houses.find(h=>h.id===id); if(h) h.value=val; }
+
+  function toggleProcess(btn) {
+    btn.classList.toggle('open');
+    btn.nextElementSibling.classList.toggle('open');
+  }
+
+  function calculate() {
+    // 최신 입력값 수집
+    houses.forEach(h => {
+      const el = document.getElementById('house-'+h.id);
+      if (el) h.value = el.value;
+    });
+
+    const prices = houses.map(h => fromComma(h.value||'0'));
+    const total  = prices.reduce((a,b)=>a+b, 0);
+    const count  = houses.length;
+    const isOne  = houseType === '1';
+    const DEDUCTION = isOne ? 1200000000 : 900000000;
+    const RATIO  = 0.60;
+
+    const excessAmount = Math.max(0, total - DEDUCTION);
+    const taxBase      = excessAmount * RATIO;
+    const area         = document.getElementById('result-area');
+
+    if (taxBase <= 0) {
+      area.innerHTML = `
+        <div class="result-card">
+          <div class="result-header">계산 결과</div>
+          <div class="msg-box">
+            과세표준이 0 이하로 <strong style="color:#00dc82;">종합부동산세 납부 대상이 아닙니다.</strong><br>
+            주택공시가격 합계 ${fmt(total)}, 공제금액 ${fmt(DEDUCTION)}
+          </div>
+        </div>`;
+      return;
+    }
+
+    // 세율 결정
+    const isHeavy    = count >= 3 && taxBase > 1200000000;
+    const bracket    = TAX_BRACKETS.find(b => taxBase <= b.max);
+    const rate       = isHeavy ? bracket.heavyRate : bracket.baseRate;
+    const progDed    = isHeavy ? bracket.heavyDeduction : bracket.baseDeduction;
+    const crtTax     = taxBase * rate - progDed;
+
+    // 재산세 계산
+    const propTaxList  = prices.map(p => calcPropertyTax(p));
+    const propTaxTotal = propTaxList.reduce((s,t)=>s+t, 0);
+
+    // 전체 주택 재산세 합계 (공시가격 합산 후 일괄 계산)
+    const totalPropTaxObj = calcTotalPropertyTaxOnSum(total);
+    const totalPropTaxSum = totalPropTaxObj.tax; // 분모
+
+    // 공제할 재산세액: 재산세 부과세액 합계 × (종부세 과세표준 × 60% × 재산세 세율) ÷ 전체 주택 재산세 합계
+    // 종부세 과세표준에 60%를 곱한 금액에 재산세 세율 적용 (누진공제 미차감)
+    const jongbuBaseForPropRate = taxBase * RATIO; // 종부세 과세표준 × 60%
+    // 종부세 과세표준×60% 구간의 재산세 세율 (누진공제 없이 세율만)
+    function propTaxRateOnly(b) {
+      if (b <= 60000000)  return 0.001;
+      if (b <= 150000000) return 0.0015;
+      if (b <= 300000000) return 0.0025;
+      return 0.004;
+    }
+    const jongbuPropRate = propTaxRateOnly(jongbuBaseForPropRate);
+    const deductiblePropTax = totalPropTaxSum > 0
+      ? propTaxTotal * (jongbuBaseForPropRate * jongbuPropRate) / totalPropTaxSum
+      : 0;
+
+    // 산출세액
+    const computedTax = Math.max(0, crtTax - Math.min(deductiblePropTax, crtTax));
+
+    // 세부담상한
+    const prevVal  = fromComma(document.getElementById('prev-year-tax').value||'0');
+    const taxLimit = prevVal > 0 ? prevVal * 1.5 : null;
+    const finalTax = taxLimit !== null ? Math.min(computedTax, taxLimit) : computedTax;
+
+    // 농어촌특별세
+    const ruralTax    = finalTax * 0.20;
+    const totalBurden = finalTax + ruralTax;
+
+    const badgeHtml = `<span class="badge ${isHeavy?'badge-heavy':'badge-normal'}">${isHeavy?'중과세율':'기본세율'}</span>`;
+    const limitRow  = taxLimit !== null
+      ? `<div class="result-row"><span class="result-label">세부담상한액 (전년도×150%)</span><span class="result-value">${fmt(taxLimit)}</span></div>` : '';
+
+    // ── 재산세 테이블 행
+    const propRows = prices.map((p,i) => {
+      const b = p * 0.6;
+      const r = propTaxRate(p);
+      const d = propTaxProgDed(p);
+      return `
+      <tr>
+        <td>주택 ${i+1}</td>
+        <td>${fmt(p)}</td>
+        <td>${fmt(b)}</td>
+        <td>${propTaxRateLabel(p)}</td>
+        <td class="td-right">${fmt(propTaxList[i])}</td>
+      </tr>`;
+    }).join('');
+
+    // ── 주택 목록 (STEP1 표시용)
+    const priceList = prices.map((p,i)=>`주택${i+1} ${fmt(p)}`).join(' + ');
+
+    // ── 세부담상한 STEP (선택)
+    const stepLimit = taxLimit !== null ? `
+      <div class="step">
+        <div class="step-title teal">STEP 5 · 세부담상한 적용</div>
+        <div class="step-content">
+          직전 연도 보유세의 150%를 초과하는 세금은 부과되지 않습니다.
+          <div class="formula">
+            세부담상한액 = 전년도 세액 <span class="hi">${fmt(prevVal)}</span> × 150%
+            = <span class="hi">${fmt(taxLimit)}</span><br>
+            산출세액 <span class="hi">${fmt(computedTax)}</span>
+            ${computedTax > taxLimit
+              ? `&gt; 세부담상한액 → <span class="note">상한 적용</span>`
+              : `≤ 세부담상한액 → <span class="note">상한 미적용</span>`}<br>
+            납부세액 = <span class="ans">${fmt(finalTax)}</span>
+          </div>
+        </div>
+      </div>` : '';
+
+    const lastStep = taxLimit !== null ? 6 : 5;
+
+    // ── 계산 과정 전체
+    const processHtml = `
+      <button class="process-toggle" onclick="toggleProcess(this)">
+        📋 계산 과정 상세 보기&nbsp;<span class="arrow">▼</span>
+      </button>
+      <div class="process-body">
+        <div class="process-inner">
+
+          <div class="step">
+            <div class="step-title blue">STEP 1 · 과세표준 산정</div>
+            <div class="step-content">
+              종합부동산세는 시가가 아닌 <strong>주택공시가격</strong> 기준으로 계산합니다.
+              공제금액을 차감한 뒤 공정시장가액비율 60%를 곱해 과세표준을 구합니다.
+              <div class="formula">
+                주택공시가격 합계<br>
+                <span class="sub">${priceList}</span><br>
+                = <span class="hi">${fmt(total)}</span><br><br>
+                − 공제금액 <span class="hi">${fmt(DEDUCTION)}</span>
+                <span class="sub">(${isOne ? '1세대 1주택자' : '일반·다주택자'})</span><br>
+                = 공제초과금액 <span class="hi">${fmt(excessAmount)}</span><br><br>
+                × 공정시장가액비율 <span class="hi">60%</span><br>
+                = 과세표준 <span class="ans">${fmt(taxBase)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-title green">STEP 2 · 종합부동산세액 산정</div>
+            <div class="step-content">
+              ${isHeavy
+                ? `3주택 이상이고 과세표준 12억원 초과 → <strong style="color:#ff9090;">중과세율</strong> 적용`
+                : count >= 3
+                  ? `3주택 이상이지만 과세표준 12억원 이하 → <strong style="color:#4ee8a8;">기본세율</strong> 적용`
+                  : `2주택 이하 소유자 → <strong style="color:#4ee8a8;">기본세율</strong> 적용`
+              }
+              <div class="formula">
+                과세표준 <span class="hi">${fmt(taxBase)}</span><br>
+                × 세율 <span class="hi">${pct(rate)}</span> ${badgeHtml}<br>
+                − 누진공제액 <span class="hi">${fmt(progDed)}</span><br>
+                = 종합부동산세액 <span class="ans">${fmt(crtTax)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-title orange">STEP 3 · 공제할 재산세액 계산</div>
+            <div class="step-content">
+              동일 주택에 재산세와 종합부동산세가 이중 과세되는 것을 방지하기 위해,
+              종합부동산세 과세표준에 해당하는 재산세 상당액을 공제합니다.
+
+              <div class="formula">
+                <strong>① 주택별 재산세 부과세액</strong><br>
+                <div class="sub-table-wrap"><table class="sub-table">
+                  <thead>
+                    <tr>
+                      <th>구분</th><th>공시가격</th><th>과세표준(×60%)</th><th>재산세 세율</th>
+                      <th style="text-align:center;">재산세액</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${prices.map((p,i) => {
+                      const b = p * 0.6;
+                      const rLabel = propTaxRateLabel(p);
+                      const d = propTaxProgDed(p);
+                      const tax = propTaxList[i];
+                      const dedStr = d > 0 ? ` − 누진공제 ${fmt(d)}` : '';
+                      return `
+                      <tr>
+                        <td style="line-height:1.6;">주택 ${i+1}<br><span style="font-size:0.71rem;color:#aaa;">${fmt(b)} × ${rLabel}${dedStr}</span></td>
+                        <td style="white-space:nowrap;">${fmt(p)}</td>
+                        <td style="white-space:nowrap;">${fmt(b)}</td>
+                        <td style="white-space:nowrap;">${rLabel}</td>
+                        <td class="td-right" style="white-space:nowrap;text-align:center;">${fmt(tax)}</td>
+                      </tr>`;
+                    }).join('')}
+                    <tr>
+                      <td class="td-sum" colspan="4">합계</td>
+                      <td class="td-right td-sum">${fmt(propTaxTotal)}</td>
+                    </tr>
+                  </tbody>
+                </table></div>
+              </div>
+
+              <div class="formula">
+                <strong>② 종부세 과세표준 × 60% × 재산세 세율</strong>
+                <span class="sub">（누진공제 미차감）</span><br><br>
+                종부세 과세표준 <span class="hi">${fmt(taxBase)}</span> × 60%
+                = <span class="hi">${fmt(jongbuBaseForPropRate)}</span><br>
+                × 재산세 세율 <span class="hi">${pct(jongbuPropRate)}</span><br>
+                = <span class="ans">${fmt(jongbuBaseForPropRate * jongbuPropRate)}</span>
+              </div>
+
+              <div class="formula">
+                <strong>③ 전체 주택에 대한 재산세액</strong>
+                <span class="sub">（공시가격 합산 후 일괄 계산）</span><br><br>
+                공시가격 합계 <span class="hi">${fmt(total)}</span> × 60%
+                = 과세표준 <span class="hi">${fmt(total*0.6)}</span><br>
+                × 재산세 세율 <span class="hi">${totalPropTaxObj.rateLabel}</span>
+                ${totalPropTaxObj.ded > 0 ? `− 누진공제 <span class="hi">${fmt(totalPropTaxObj.ded)}</span>` : ''}<br>
+                = <span class="ans">${fmt(totalPropTaxSum)}</span>
+              </div>
+
+              <div class="formula">
+                <strong>④ 공제할 재산세액</strong><br>
+                <span class="sub">= ① 재산세 부과세액 합계 × ② 종부세 과세표준 × 60% × 재산세 세율 ÷ ③ 전체 주택에 대한 재산세액</span><br><br>
+                <span class="hi">${fmt(propTaxTotal)}</span>
+                × <span class="hi">${fmt(jongbuBaseForPropRate * jongbuPropRate)}</span><br>
+                ÷ <span class="hi">${fmt(totalPropTaxSum)}</span><br>
+                = <span class="ans">${fmt(deductiblePropTax)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-title purple">STEP 4 · 산출세액 산정</div>
+            <div class="step-content">
+              종합부동산세액에서 공제할 재산세액을 차감하여 산출세액을 구합니다.
+              <div class="formula">
+                종합부동산세액 <span class="hi">${fmt(crtTax)}</span><br>
+                − 공제할 재산세액 <span class="hi">${fmt(deductiblePropTax)}</span><br>
+                = 산출세액 <span class="ans">${fmt(computedTax)}</span>
+              </div>
+            </div>
+          </div>
+
+          ${stepLimit}
+
+          <div class="step">
+            <div class="step-title red">STEP ${lastStep} · 농어촌특별세</div>
+            <div class="step-content">
+              종합부동산세 납부세액이 발생하면 납부세액의 20%를 농어촌특별세로 함께 납부해야 합니다.
+              <div class="formula">
+                납부세액 <span class="hi">${fmt(finalTax)}</span> × 20%
+                = 농어촌특별세 <span class="ans">${fmt(ruralTax)}</span><br><br>
+                총 부담세액 = <span class="hi">${fmt(finalTax)}</span> + <span class="hi">${fmt(ruralTax)}</span>
+                = <span class="ans">${fmt(totalBurden)}</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    area.innerHTML = `
+      <div class="result-card">
+        <div class="result-header">계산 결과</div>
+        <div class="result-rows">
+          <div class="result-row">
+            <span class="result-label">주택공시가격 합계</span>
+            <span class="result-value">${fmt(total)}</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">공제금액</span>
+            <span class="result-value">− ${fmt(DEDUCTION)}</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">공제초과금액</span>
+            <span class="result-value">${fmt(excessAmount)}</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">과세표준 (×60%)</span>
+            <span class="result-value">${fmt(taxBase)}</span>
+          </div>
+          <div class="result-divider"></div>
+          <div class="result-row">
+            <span class="result-label">적용 세율 ${badgeHtml}</span>
+            <span class="result-value">${pct(rate)}</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">종합부동산세액 (누진공제 후)</span>
+            <span class="result-value">${fmt(crtTax)}</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">공제할 재산세액</span>
+            <span class="result-value">− ${fmt(deductiblePropTax)}</span>
+          </div>
+          <div class="result-divider"></div>
+          <div class="result-row">
+            <span class="result-label">산출세액</span>
+            <span class="result-value">${fmt(computedTax)}</span>
+          </div>
+          ${limitRow}
+          <div class="result-row">
+            <span class="result-label">종합부동산세 납부세액</span>
+            <span class="result-value">${fmt(finalTax)}</span>
+          </div>
+          <div class="result-row">
+            <span class="result-label">농어촌특별세 (×20%)</span>
+            <span class="result-value">${fmt(ruralTax)}</span>
+          </div>
+        </div>
+        <div class="total-row">
+          <span class="total-label">총 부담세액</span>
+          <span class="total-value">${fmt(totalBurden)}</span>
+        </div>
+        ${processHtml}
+      </div>`;
+  }
+
+  // ── 인쇄 ─────────────────────────────────────────────────
+  function printResult() {
+    const area = document.getElementById('result-area');
+    if (!area.innerHTML.trim()) {
+      alert('먼저 계산하기 버튼을 눌러 결과를 생성해 주세요.');
+      return;
+    }
+    // 계산 과정 패널을 열어서 인쇄에 포함
+    const body = document.querySelector('.process-body');
+    if (body) body.classList.add('open');
+
+    // 인쇄 푸터에 날짜 삽입
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 ${now.getHours()}시 ${now.getMinutes()}분 계산`;
+    document.getElementById('print-footer').textContent = `종합부동산세 계산기 · ${dateStr} · 본 자료는 참고용이며 실제 세액과 다를 수 있습니다.`;
+
+    window.print();
+  }
+
+  // ── 저장 (텍스트 파일로 다운로드) ───────────────────────
+  function saveResult() {
+    const area = document.getElementById('result-area');
+    if (!area.innerHTML.trim()) {
+      alert('먼저 계산하기 버튼을 눌러 결과를 생성해 주세요.');
+      return;
+    }
+
+    // 계산 과정 패널을 열어서 텍스트 추출에 포함
+    const processBody = document.querySelector('.process-body');
+    if (processBody) processBody.classList.add('open');
+
+    // HTML → 텍스트 변환
+    function nodeToText(node, indent) {
+      indent = indent || '';
+      let text = '';
+
+      if (node.nodeType === Node.TEXT_NODE) {
+        const t = node.textContent.trim();
+        if (t) text += t + ' ';
+        return text;
+      }
+
+      if (node.nodeType !== Node.ELEMENT_NODE) return '';
+
+      const tag = node.tagName.toLowerCase();
+
+      // 숨겨진 요소 스킵
+      const style = window.getComputedStyle(node);
+      if (style.display === 'none' || style.visibility === 'hidden') return '';
+
+      // 토글 버튼 스킵
+      if (node.classList.contains('process-toggle')) return '';
+
+      const isBlock = ['div','p','br','tr','li','h1','h2','h3','h4','h5','h6',
+                       'thead','tbody','table','section','article'].includes(tag);
+      const isHeader = ['h1','h2','h3','h4','h5','h6'].includes(tag);
+      const isTH = tag === 'th';
+      const isTD = tag === 'td';
+      const isTR = tag === 'tr';
+
+      if (tag === 'br') return '\n';
+
+      let childText = '';
+      for (const child of node.childNodes) {
+        childText += nodeToText(child, indent);
+      }
+      childText = childText.trim();
+
+      if (!childText) return '';
+
+      if (isHeader)       return '\n' + indent + '▶ ' + childText + '\n';
+      if (isTH)           return '[ ' + childText + ' ]\t';
+      if (isTD)           return childText + '\t';
+      if (isTR)           return '\n' + indent + childText.replace(/\t$/, '');
+      if (tag === 'table')return '\n' + childText + '\n';
+      if (isBlock)        return '\n' + indent + childText;
+      return childText + ' ';
+    }
+
+    // 결과 영역 텍스트 추출
+    let raw = nodeToText(area);
+
+    // 연속 공백·줄바꿈 정리
+    raw = raw
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+    const header = `종합부동산세 계산결과\n계산일시: ${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 ${now.getHours()}시 ${now.getMinutes()}분\n본 자료는 참고용이며 실제 세액과 다를 수 있습니다.\n${'='.repeat(50)}\n\n`;
+
+    const blob = new Blob(['\uFEFF' + header + raw], { type: 'text/plain;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `종합부동산세_계산결과_${dateStr}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ── 초기화 ────────────────────────────────────────────────
+  function resetAll() {
+    if (!confirm('모든 입력값과 결과를 초기화할까요?')) return;
+    houseType = '1';
+    houseId   = 1;
+    houses    = [{ id: houseId++ }];
+    document.getElementById('btn-one').classList.add('active');
+    document.getElementById('btn-multi').classList.remove('active');
+    document.getElementById('prev-year-tax').value = '';
+    document.getElementById('result-area').innerHTML = '';
+    renderHouses();
+  }
+
+  renderHouses();
+</script>
+</body>
+</html>
