@@ -16,7 +16,6 @@
   --line: #b8afa4;
   --accent: #2c5f8a;
   --hover: #e8f0f8;
-  --shadow: rgba(28,24,20,0.08);
   --cell-h: 80px;
 }
 
@@ -28,6 +27,7 @@ body {
   display: flex;
 }
 
+/* ── Sidebar ── */
 .sidebar {
   width: 270px;
   min-height: 100vh;
@@ -66,17 +66,8 @@ body {
   align-items: start;
 }
 .period-col { display: flex; flex-direction: column; gap: 4px; }
-.period-mini-label {
-  font-size: 0.6rem;
-  color: var(--ink2);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-.arrow-col {
-  display: flex; align-items: center; justify-content: center;
-  padding-top: 18px;
-  color: var(--ink2); font-size: 0.85rem;
-}
+.period-mini-label { font-size: 0.6rem; color: var(--ink2); letter-spacing: 0.1em; text-transform: uppercase; }
+.arrow-col { display: flex; align-items: center; justify-content: center; padding-top: 18px; color: var(--ink2); font-size: 0.85rem; }
 
 select, input[type="text"] {
   font-family: 'Noto Sans KR', sans-serif;
@@ -117,97 +108,51 @@ select { cursor: pointer; }
 .btn-row { display: flex; gap: 6px; }
 .btn-row .btn { flex: 1; font-size: 0.73rem; padding: 7px 8px; }
 
-.arc-list {
-  display: flex; flex-direction: column; gap: 5px;
-  max-height: 260px; overflow-y: auto;
-}
+.arc-list { display: flex; flex-direction: column; gap: 5px; max-height: 260px; overflow-y: auto; }
 .arc-item {
   display: flex; align-items: center; gap: 7px;
   padding: 6px 8px; background: var(--bg); border-radius: 4px;
-  font-size: 0.76rem; border: 1px solid transparent;
-  transition: border-color 0.15s;
+  font-size: 0.76rem; border: 1px solid transparent; transition: border-color 0.15s;
 }
 .arc-item:hover { border-color: var(--line); }
 .arc-item.selected { border-color: var(--accent); background: var(--hover); }
 .arc-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.arc-text {
-  flex: 1; color: var(--ink); overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
-}
+.arc-text { flex: 1; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .arc-dates { font-size: 0.67rem; color: var(--ink2); white-space: nowrap; }
 .arc-del-btn {
   background: none; border: none; cursor: pointer;
   color: #c0392b; font-size: 0.82rem; padding: 0 2px;
-  opacity: 0.4; transition: opacity 0.15s; flex-shrink: 0;
-  line-height: 1;
+  opacity: 0.4; transition: opacity 0.15s; flex-shrink: 0; line-height: 1;
 }
 .arc-del-btn:hover { opacity: 1; }
-
 hr.divider { border: none; border-top: 1px solid var(--line); }
 
-.main {
-  flex: 1; display: flex; justify-content: flex-start;
-  padding: 48px 60px; overflow: auto;
-}
+/* ── Main ── */
+.main { flex: 1; display: flex; padding: 48px 60px; overflow: auto; }
+.canvas-wrap { position: relative; display: inline-flex; align-items: flex-start; }
 
-.scheduler-wrap { position: relative; display: flex; }
-
-.timeline {
-  display: flex; flex-direction: column;
-  position: relative; width: 62px; flex-shrink: 0; user-select: none;
+/*
+  Timeline is an SVG.
+  We draw everything in one SVG so coordinates are consistent.
+*/
+#mainSvg {
+  display: block;
+  overflow: visible;
+  pointer-events: none;
 }
-
-/* Vertical main line */
-.timeline::before {
-  content: '';
-  position: absolute;
-  left: 40px; top: 36px; bottom: 0;
-  width: 1.5px; background: var(--ink); z-index: 0;
-}
-
-.year-badge {
-  font-family: 'Playfair Display', serif;
-  font-size: 0.8rem; color: var(--ink2);
-  letter-spacing: 0.08em; height: 36px;
-  display: flex; align-items: center; padding-left: 2px;
-}
-
-.month-row {
-  height: var(--cell-h);
-  display: flex; align-items: flex-start; position: relative;
-}
-.month-num {
-  font-family: 'Playfair Display', serif;
-  font-size: 1rem; color: var(--ink);
-  width: 30px; text-align: right; line-height: 1;
-  margin-top: -1px; flex-shrink: 0;
-}
-.month-tick {
-  width: 10px; height: 1.5px; background: var(--ink);
-  position: relative; top: 7px; flex-shrink: 0;
-}
-
-.timeline-end { position: relative; height: 6px; }
-.timeline-end::before {
-  content: ''; position: absolute; left: 40px; top: 0;
-  width: 10px; height: 1.5px; background: var(--ink);
-}
-
-.arcs-svg {
-  position: absolute; left: 50px; top: 0;
-  pointer-events: none; overflow: visible;
-}
+#mainSvg .arc-group { pointer-events: all; cursor: pointer; }
 
 .arc-label-input {
   font-family: 'Noto Sans KR', sans-serif;
   font-size: 0.78rem; font-weight: 500;
   border: none; background: transparent; outline: none;
-  width: 170px; cursor: text;
+  width: 180px; cursor: text;
   padding: 2px 4px; border-radius: 2px;
   transition: background 0.15s;
+  color: inherit;
 }
-.arc-label-input:hover { background: rgba(44,95,138,0.07); }
-.arc-label-input:focus { background: rgba(44,95,138,0.12); }
+.arc-label-input:hover { background: rgba(44,95,138,0.08); }
+.arc-label-input:focus { background: rgba(44,95,138,0.14); }
 .arc-label-input::placeholder { color: #c8bfb0; }
 
 .toast {
@@ -218,14 +163,66 @@ hr.divider { border: none; border-top: 1px solid var(--line); }
   transition: opacity 0.25s; pointer-events: none; z-index: 999;
 }
 .toast.show { opacity: 1; }
+
+/* ── Main inner layout ── */
+.main-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 28px;
+  min-width: 0;
+}
+
+/* ── Year card ── */
+.year-card {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--paper);
+  border-radius: 20px;
+  box-shadow: 0 2px 16px rgba(28,24,20,0.10);
+  padding: 18px 28px;
+  min-width: 320px;
+  width: 380px;
+}
+.year-btn {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: #ece9e3;
+  border: none;
+  font-size: 1.1rem;
+  color: #6b5e52;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+.year-btn:hover { background: #ddd9d0; }
+.year-btn:active { transform: scale(0.93); }
+.year-center {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 2px;
+}
+.year-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1c1814;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.year-sub {
+  font-size: 0.78rem;
+  color: #b8afa4;
+  letter-spacing: 0.12em;
+}
 </style>
 </head>
 <body>
 
 <aside class="sidebar">
-  <div>
-    <h1>연간<br>스케줄러</h1>
-  </div>
+  <div><h1>연간<br>스케줄러</h1></div>
 
   <div>
     <div class="sidebar-label">기간 설정</div>
@@ -247,14 +244,14 @@ hr.divider { border: none; border-top: 1px solid var(--line); }
   <div>
     <div class="sidebar-label">색상</div>
     <div class="color-swatches" id="swatches">
-      <div class="swatch active" data-color="#2c5f8a" style="background:#2c5f8a"></div>
+      <div class="swatch active" data-color="#5b4fcf" style="background:#5b4fcf"></div>
+      <div class="swatch" data-color="#2c5f8a" style="background:#2c5f8a"></div>
       <div class="swatch" data-color="#8a2c2c" style="background:#8a2c2c"></div>
       <div class="swatch" data-color="#2c7a4b" style="background:#2c7a4b"></div>
       <div class="swatch" data-color="#7a5c2c" style="background:#7a5c2c"></div>
       <div class="swatch" data-color="#5c2c7a" style="background:#5c2c7a"></div>
-      <div class="swatch" data-color="#1c1814" style="background:#1c1814"></div>
       <div class="swatch" data-color="#1a7a7a" style="background:#1a7a7a"></div>
-      <div class="swatch" data-color="#8a6c1a" style="background:#8a6c1a"></div>
+      <div class="swatch" data-color="#1c1814" style="background:#1c1814"></div>
     </div>
   </div>
 
@@ -287,22 +284,39 @@ hr.divider { border: none; border-top: 1px solid var(--line); }
 </aside>
 
 <main class="main">
-  <div class="scheduler-wrap" id="schedulerWrap">
-    <div class="timeline" id="timeline"></div>
-    <svg class="arcs-svg" id="arcsSvg"></svg>
+  <div class="main-inner">
+    <!-- Year selector card -->
+    <div class="year-card">
+      <button class="year-btn" id="yearPrev">←</button>
+      <div class="year-center">
+        <div class="year-num" id="yearDisplay"></div>
+        <div class="year-sub">연간 타임라인</div>
+      </div>
+      <button class="year-btn" id="yearNext">→</button>
+    </div>
+    <!-- Timeline canvas -->
+    <div class="canvas-wrap">
+      <svg id="mainSvg"></svg>
+    </div>
   </div>
 </main>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const CELL_H = 80;
-const TOP_OFFSET = 36;
+// ── Layout constants ──
+const CELL_H      = 80;   // px per month cell
+const LINE_X      = 48;   // x of the vertical timeline line in SVG
+const YEAR_H      = 32;   // height of year label area
+const TICK_LEN    = 10;   // tick extends right from LINE_X
+const FONT_SIZE   = 16;   // month number font size
 const DAYS_IN_MONTH = [0,31,28,31,30,31,30,31,31,30,31,30,31];
+const TOTAL_H     = YEAR_H + 12 * CELL_H + 10;
 
 let arcs = [];
-let selectedColor = '#2c5f8a';
+let selectedColor = '#5b4fcf';
 let selectedArcId = null;
+let currentYear = new Date().getFullYear();
 
 // ── Toast ──
 function showToast(msg) {
@@ -323,7 +337,6 @@ function buildMonthSelect(id, def) {
     sel.appendChild(o);
   }
 }
-
 function buildDaySelect(id, month, def) {
   const sel = document.getElementById(id);
   sel.innerHTML = '';
@@ -337,9 +350,9 @@ function buildDaySelect(id, month, def) {
 }
 
 buildMonthSelect('startMonth', 1);
-buildMonthSelect('endMonth', 2);
+buildMonthSelect('endMonth',   2);
 buildDaySelect('startDay', 1, 1);
-buildDaySelect('endDay', 2, 28);
+buildDaySelect('endDay',   2, 28);
 
 document.getElementById('startMonth').addEventListener('change', function() {
   buildDaySelect('startDay', +this.value, 1);
@@ -357,191 +370,169 @@ document.querySelectorAll('.swatch').forEach(s => {
   });
 });
 
-// ── Build Timeline HTML ──
-const timeline = document.getElementById('timeline');
-const yb = document.createElement('div');
-yb.className = 'year-badge';
-yb.textContent = new Date().getFullYear();
-timeline.appendChild(yb);
-
-for (let m = 1; m <= 12; m++) {
-  const row = document.createElement('div');
-  row.className = 'month-row';
-  row.innerHTML = `<span class="month-num">${m}</span><div class="month-tick"></div>`;
-  timeline.appendChild(row);
-}
-const endDiv = document.createElement('div');
-endDiv.className = 'timeline-end';
-timeline.appendChild(endDiv);
-
 // ── Y coordinate ──
-// month: 1-12, day: 1-31
-// y1 is AT the start tick, y2 is AT the end tick (exact day position)
+// Month M tick is at exactly: YEAR_H + (M-1)*CELL_H
+// (The tick IS at the top of each cell — month number aligns to it)
+// Day 1 of month M  → tickY(M)
+// Day last of month M → tickY(M+1)
+// Month 13 "tick" = end of December = YEAR_H + 12*CELL_H
+function tickY(month) {
+  // month 1..13
+  return YEAR_H + (month - 1) * CELL_H;
+}
+
 function getY(month, day) {
   const daysInM = DAYS_IN_MONTH[month] || 30;
-  // day=1 → start of month row, day=max → end of month row
+  // day 1 → tickY(month), day last → tickY(month+1)
   const frac = (day - 1) / daysInM;
-  return TOP_OFFSET + (month - 1) * CELL_H + frac * CELL_H;
+  return tickY(month) + frac * CELL_H;
 }
 
 function dateLabel(m, d) { return `${m}/${d}`; }
 
-// ── Add ──
-document.getElementById('addBtn').addEventListener('click', addArc);
-document.getElementById('arcLabel').addEventListener('keydown', e => {
-  if (e.key === 'Enter') addArc();
-});
-
-function addArc() {
-  const sm = +document.getElementById('startMonth').value;
-  const sd = +document.getElementById('startDay').value;
-  const em = +document.getElementById('endMonth').value;
-  const ed = +document.getElementById('endDay').value;
-
-  if (sm * 1000 + sd > em * 1000 + ed) {
-    showToast('종료일이 시작일보다 앞설 수 없어요'); return;
-  }
-  const label = document.getElementById('arcLabel').value.trim() || '할 일';
-  arcs.push({ id: Date.now(), sm, sd, em, ed, color: selectedColor, label });
-  document.getElementById('arcLabel').value = '';
-  renderAll();
-  showToast('일정이 추가됐어요');
+// ── SVG helpers ──
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs = {}) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k,v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
 }
 
-// ── Delete ──
-function deleteArc(id) {
-  arcs = arcs.filter(a => a.id !== id);
-  if (selectedArcId === id) selectedArcId = null;
-  renderAll();
-  showToast('삭제됐어요');
-}
+// ── Draw static timeline ──
+function drawTimeline(svg) {
+  const g = el('g', { id: 'timeline-static' });
 
-document.getElementById('clearBtn').addEventListener('click', () => {
-  if (!arcs.length) return;
-  if (confirm('모든 일정을 삭제할까요?')) {
-    arcs = []; selectedArcId = null; renderAll(); showToast('전체 삭제됐어요');
+  // Year label
+  const yearTxt = el('text', {
+    x: LINE_X - 4, y: YEAR_H - 6,
+    'text-anchor': 'end',
+    'font-family': 'Playfair Display, serif',
+    'font-size': '13',
+    fill: '#6b5e52',
+    'letter-spacing': '1'
+  });
+  yearTxt.textContent = currentYear;
+  g.appendChild(yearTxt);
+
+  // Vertical line: from first tick (YEAR_H) to last tick (YEAR_H + 12*CELL_H)
+  g.appendChild(el('line', {
+    x1: LINE_X, y1: tickY(1),
+    x2: LINE_X, y2: tickY(13),
+    stroke: '#1c1814', 'stroke-width': '1.5', 'stroke-linecap': 'round'
+  }));
+
+  // Month ticks + labels
+  for (let m = 1; m <= 12; m++) {
+    const y = tickY(m);
+    // tick
+    g.appendChild(el('line', {
+      x1: LINE_X, y1: y, x2: LINE_X + TICK_LEN, y2: y,
+      stroke: '#1c1814', 'stroke-width': '1.5', 'stroke-linecap': 'round'
+    }));
+    // label
+    const txt = el('text', {
+      x: LINE_X - 6, y: y + 4,
+      'text-anchor': 'end',
+      'font-family': 'Playfair Display, serif',
+      'font-size': FONT_SIZE,
+      fill: '#1c1814'
+    });
+    txt.textContent = m;
+    g.appendChild(txt);
   }
-});
 
-// ── Save ──
-document.getElementById('saveBtn').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify({ version: 1, arcs }, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `schedule_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('저장 완료!');
-});
+  // End cap tick at month 13
+  const yEnd = tickY(13);
+  g.appendChild(el('line', {
+    x1: LINE_X, y1: yEnd, x2: LINE_X + TICK_LEN, y2: yEnd,
+    stroke: '#1c1814', 'stroke-width': '1.5', 'stroke-linecap': 'round'
+  }));
 
-// ── Load ──
-document.getElementById('loadBtn').addEventListener('click', () => {
-  document.getElementById('fileInput').click();
-});
-document.getElementById('fileInput').addEventListener('change', function() {
-  const file = this.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (Array.isArray(data.arcs)) {
-        arcs = data.arcs; selectedArcId = null;
-        renderAll(); showToast('불러오기 완료!');
-      } else throw 0;
-    } catch { showToast('파일 형식이 올바르지 않아요'); }
-  };
-  reader.readAsText(file);
-  this.value = '';
-});
+  svg.appendChild(g);
+}
 
 // ── Render ──
-function renderAll() { renderSvg(); renderList(); }
+function renderAll() {
+  const svg = document.getElementById('mainSvg');
 
-function renderSvg() {
-  const svg = document.getElementById('arcsSvg');
-  const totalH = TOP_OFFSET + 12 * CELL_H + 20;
-  svg.style.height = totalH + 'px';
-
-  // Column assignment
+  // Column assignment (greedy, no overlap)
   const columns = [];
   for (const arc of arcs) {
-    const s = arc.sm * 1000 + arc.sd;
+    const s = arc.sm * 10000 + arc.sd;
     let placed = false;
     for (const col of columns) {
       const last = col[col.length - 1];
-      if (s > last.em * 1000 + last.ed) { col.push(arc); placed = true; break; }
+      if (s > last.em * 10000 + last.ed) { col.push(arc); placed = true; break; }
     }
     if (!placed) columns.push([arc]);
   }
   const arcCol = {};
   columns.forEach((col, ci) => col.forEach(a => arcCol[a.id] = ci));
 
-  svg.innerHTML = '';
+  const numCols = Math.max(1, columns.length);
+  const svgW = LINE_X + numCols * 70 + 220;
 
+  svg.setAttribute('width',  svgW);
+  svg.setAttribute('height', TOTAL_H);
+  svg.setAttribute('viewBox', `0 0 ${svgW} ${TOTAL_H}`);
+
+  svg.innerHTML = '';
+  drawTimeline(svg);
+
+  // Draw arcs
   for (const arc of arcs) {
-    const col = arcCol[arc.id] ?? 0;
-    const bulge = 50 + col * 66;
+    const col    = arcCol[arc.id] ?? 0;
+    const bulge  = LINE_X + 18 + col * 68;  // rightmost x of the arc
     const labelX = bulge + 14;
 
-    const y1 = getY(arc.sm, arc.sd);
-    const y2 = getY(arc.em, arc.ed);
+    // Exact pixel positions: arc starts/ends ON the timeline line (x = LINE_X)
+    const y1   = getY(arc.sm, arc.sd);
+    const y2   = getY(arc.em, arc.ed);
     const midY = (y1 + y2) / 2;
-    const ht = y2 - y1;
+    const ht   = Math.abs(y2 - y1);
 
-    // Clean bracket curve: starts and ends exactly at (0, y1) and (0, y2)
-    // No straight arms — pure smooth bezier
-    // Using cubic bezier: control points pull the curve outward symmetrically
-    const ctrl = Math.max(ht * 0.55, 30); // control offset
-    const pathD = `M 0 ${y1} C ${bulge} ${y1 + ctrl * 0.5}, ${bulge} ${y2 - ctrl * 0.5}, 0 ${y2}`;
+    // Smooth cubic bezier bracket: M(line,y1) → bulge → M(line,y2)
+    // Control points: pull out to bulge at 40% of height from each end
+    const ctrl = Math.max(ht * 0.45, 20);
+    const pathD = `M ${LINE_X} ${y1} C ${bulge} ${y1 + ctrl}, ${bulge} ${y2 - ctrl}, ${LINE_X} ${y2}`;
 
     const isSelected = selectedArcId === arc.id;
 
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.style.cursor = 'pointer';
+    const g = el('g');
+    g.classList.add('arc-group');
     g.addEventListener('click', () => {
       selectedArcId = isSelected ? null : arc.id;
       renderAll();
     });
 
-    // Wider invisible hit area
-    const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    hitPath.setAttribute('d', pathD);
-    hitPath.setAttribute('stroke', 'transparent');
-    hitPath.setAttribute('stroke-width', '18');
-    hitPath.setAttribute('fill', 'none');
-    g.appendChild(hitPath);
+    // Hit area (wider, transparent)
+    const hit = el('path', { d: pathD, stroke: 'transparent', 'stroke-width': '16', fill: 'none' });
+    g.appendChild(hit);
 
-    // Visible arc path
-    const visPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    visPath.setAttribute('d', pathD);
-    visPath.setAttribute('stroke', arc.color);
-    visPath.setAttribute('stroke-width', isSelected ? '2.4' : '1.7');
-    visPath.setAttribute('fill', 'none');
-    visPath.setAttribute('stroke-linecap', 'round');
-    g.appendChild(visPath);
-
-    // Small dots at exact start/end points on the line
-    [y1, y2].forEach(y => {
-      const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      dot.setAttribute('cx', '0');
-      dot.setAttribute('cy', String(y));
-      dot.setAttribute('r', '3');
-      dot.setAttribute('fill', arc.color);
-      dot.setAttribute('stroke', 'white');
-      dot.setAttribute('stroke-width', '1');
-      g.appendChild(dot);
+    // Visible arc
+    const vis = el('path', {
+      d: pathD,
+      stroke: arc.color,
+      'stroke-width': isSelected ? '2.4' : '1.7',
+      fill: 'none',
+      'stroke-linecap': 'round'
     });
+    g.appendChild(vis);
 
-    // Label input
-    const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-    fo.setAttribute('x', String(labelX));
-    fo.setAttribute('y', String(midY - 13));
-    fo.setAttribute('width', '200');
-    fo.setAttribute('height', '26');
+    // Dots at exact start/end points on the line
+    for (const y of [y1, y2]) {
+      g.appendChild(el('circle', {
+        cx: LINE_X, cy: y, r: '3.2',
+        fill: arc.color, stroke: '#fffefa', 'stroke-width': '1.2'
+      }));
+    }
 
+    // Text label via foreignObject
+    const fo = el('foreignObject', {
+      x: labelX, y: midY - 13, width: 200, height: 26
+    });
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex;align-items:center;height:100%;';
+    wrap.style.cssText = 'display:flex;align-items:center;height:100%';
     const inp = document.createElement('input');
     inp.type = 'text';
     inp.className = 'arc-label-input';
@@ -557,9 +548,7 @@ function renderSvg() {
     svg.appendChild(g);
   }
 
-  const svgW = Math.max(300, 60 + columns.length * 66 + 240);
-  svg.style.width = svgW + 'px';
-  document.getElementById('schedulerWrap').style.minWidth = (62 + svgW) + 'px';
+  renderList();
 }
 
 function renderList() {
@@ -596,7 +585,13 @@ function renderList() {
     delBtn.className = 'arc-del-btn';
     delBtn.title = '삭제';
     delBtn.textContent = '✕';
-    delBtn.addEventListener('click', e => { e.stopPropagation(); deleteArc(arc.id); });
+    delBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      arcs = arcs.filter(a => a.id !== arc.id);
+      if (selectedArcId === arc.id) selectedArcId = null;
+      renderAll();
+      showToast('삭제됐어요');
+    });
 
     item.appendChild(dot);
     item.appendChild(text);
@@ -606,6 +601,83 @@ function renderList() {
   });
 }
 
+// ── Add ──
+function addArc() {
+  const sm = +document.getElementById('startMonth').value;
+  const sd = +document.getElementById('startDay').value;
+  const em = +document.getElementById('endMonth').value;
+  const ed = +document.getElementById('endDay').value;
+
+  if (sm * 10000 + sd > em * 10000 + ed) {
+    showToast('종료일이 시작일보다 앞설 수 없어요'); return;
+  }
+  const label = document.getElementById('arcLabel').value.trim() || '할 일';
+  arcs.push({ id: Date.now(), sm, sd, em, ed, color: selectedColor, label });
+  document.getElementById('arcLabel').value = '';
+  renderAll();
+  showToast('일정이 추가됐어요');
+}
+
+document.getElementById('addBtn').addEventListener('click', addArc);
+document.getElementById('arcLabel').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addArc();
+});
+
+// ── Clear ──
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (!arcs.length) return;
+  if (confirm('모든 일정을 삭제할까요?')) {
+    arcs = []; selectedArcId = null; renderAll(); showToast('전체 삭제됐어요');
+  }
+});
+
+// ── Save ──
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify({ version: 2, arcs }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `schedule_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('저장 완료!');
+});
+
+// ── Load ──
+document.getElementById('loadBtn').addEventListener('click', () => document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', function() {
+  const file = this.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (Array.isArray(data.arcs)) {
+        arcs = data.arcs; selectedArcId = null;
+        renderAll(); showToast('불러오기 완료!');
+      } else throw 0;
+    } catch { showToast('파일 형식이 올바르지 않아요'); }
+  };
+  reader.readAsText(file);
+  this.value = '';
+});
+
+// ── Init ──
+function updateYearDisplay() {
+  document.getElementById('yearDisplay').textContent = currentYear + '년';
+}
+
+document.getElementById('yearPrev').addEventListener('click', () => {
+  currentYear--;
+  updateYearDisplay();
+  renderAll();
+});
+document.getElementById('yearNext').addEventListener('click', () => {
+  currentYear++;
+  updateYearDisplay();
+  renderAll();
+});
+
+updateYearDisplay();
 renderAll();
 </script>
 </body>
