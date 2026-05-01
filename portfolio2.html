@@ -1018,277 +1018,459 @@
     .price-date { margin-left: 0; }
     .stat-item:nth-child(4n) { border-right: 1px solid var(--border); }
     .stat-item:nth-child(2n) { border-right: none; }
-    /* summary borders handled in base CSS */
+    /<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주식 포트폴리오 관리</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #1f2d47;
+    --accent: #00d4aa;
+    --accent2: #4f8ef7;
+    --red: #ff4f6b;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
   }
-</style>
-</head>
-<body>
 
-<!-- Tab Navigation -->
-<div class="tab-nav">
-  <div class="tab-logo">📈 StockPort</div>
-  <button class="tab-btn active" onclick="switchTab('portfolio')">포트폴리오</button>
-  <button class="tab-btn" onclick="switchTab('search')">주식 시세 조회</button>
-</div>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-<!-- ═══════════════════════ PORTFOLIO TAB ═══════════════════════ -->
-<div class="page active" id="page-portfolio">
-<div class="wrapper">
-  <header>
-    <div class="badge">보유 주식 관리</div>
-    <h1>내 <span>포트폴리오</span></h1>
-    <p class="subtitle">보유 주식을 등록하고 현재가 기준 평가금액을 확인하세요</p>
-  </header>
-
-  <!-- Summary -->
-  <div class="card" id="summaryCard">
-    <div class="summary-grid">
-      <div class="summary-item">
-        <div class="summary-label">총 평가금액</div>
-        <div class="summary-val" id="totalVal">-</div>
-        <div class="summary-sub" id="totalValSub">원</div>
-      </div>
-      <div class="summary-item">
-        <div class="summary-label">총 매입금액</div>
-        <div class="summary-val" id="totalCost">-</div>
-        <div class="summary-sub">원</div>
-      </div>
-      <div class="summary-item">
-        <div class="summary-label">평가손익</div>
-        <div class="summary-val" id="totalPnl">-</div>
-        <div class="summary-sub" id="totalPnlPct">-</div>
-      </div>
-      <div class="summary-item">
-        <div class="summary-label">보유 종목</div>
-        <div class="summary-val" id="totalCount">0</div>
-        <div class="summary-sub">종목</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Add stock form -->
-  <div class="card" id="addFormCard" style="overflow:visible">
-    <div class="card-title">
-      종목 추가
-    </div>
-    <div class="add-form">
-      <!-- Step 1: search -->
-      <div class="add-search-row">
-        <div class="field stock-search-wrap">
-          <label>종목 검색</label>
-          <input type="text" id="stockSearchInput"
-            placeholder="종목명 또는 6자리 코드 입력 후 검색"
-            autocomplete="off" />
-        </div>
-        <button class="btn" onclick="searchStock()" id="stockSearchBtn" style="flex-shrink:0">검색</button>
-        <div class="stock-dropdown" id="stockDropdown"></div>
-      </div>
-
-      <!-- Step 2: selected chip -->
-      <div class="selected-chip" id="selectedChip">
-        <span class="chip-name" id="chipName"></span>
-        <span class="chip-code" id="chipCode"></span>
-        <span class="chip-mkt" id="chipMkt"></span>
-        <button class="chip-clear" onclick="clearSelected()" title="선택 해제">✕</button>
-      </div>
-
-      <!-- Step 3: qty + price -->
-      <div class="add-qty-row" id="addQtyRow">
-        <div class="field">
-          <label>보유 주식수</label>
-          <input type="number" id="addQty" placeholder="100" min="1" />
-        </div>
-        <div class="field">
-          <label>평균 매입가 (원)</label>
-          <input type="number" id="addAvgPrice" placeholder="70000" min="0" />
-        </div>
-        <button class="btn" onclick="addStock()" style="flex-shrink:0;align-self:flex-end">+ 추가</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Portfolio table -->
-  <div class="card">
-    <div class="card-title" style="flex-direction:column;align-items:flex-start;gap:10px;padding:16px 20px">
-      <span>보유 종목 목록</span>
-      <!-- 1행: 시세 새로고침 + 업데이트 시각 -->
-      <div style="display:flex;align-items:center;gap:8px;width:100%">
-        <button class="btn-ghost" onclick="refreshAll()" id="refreshBtn" style="height:34px;padding:0 14px;font-size:12px;white-space:nowrap;border-color:var(--accent);color:var(--accent)">↺ 시세 새로고침</button>
-        <span class="last-updated" id="lastUpdated">—</span>
-      </div>
-      <!-- 2행: 클라우드에서 불러오기 | 클라우드에 저장하기 -->
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-ghost" onclick="loadFromSheet()" style="height:34px;padding:0 14px;font-size:12px;white-space:nowrap;border-color:#4f8ef7;color:#4f8ef7">☁️ 클라우드에서 불러오기</button>
-        <button class="btn-ghost" onclick="saveToSheet()" id="saveSheetBtn" style="height:34px;padding:0 14px;font-size:12px;white-space:nowrap;border-color:#4f8ef7;color:#4f8ef7">☁️ 저장하기</button>
-      </div>
-      <!-- 3행: 내보내기 | 불러오기 -->
-      <div style="display:flex;gap:8px">
-        <button class="btn-ghost" onclick="exportJSON()" style="height:34px;padding:0 14px;font-size:12px;white-space:nowrap">📤 내보내기</button>
-        <label class="btn-ghost" style="height:34px;padding:0 14px;font-size:12px;display:inline-flex;align-items:center;cursor:pointer;margin:0;white-space:nowrap">
-          📥 불러오기
-          <input type="file" id="importFile" accept=".json" onchange="importJSON(event)" style="display:none">
-        </label>
-      </div>
-    </div>
-    <div id="portfolioBody"></div>
-  </div>
-</div>
-</div>
-
-<!-- ═══════════════════════ SEARCH TAB ═══════════════════════ -->
-<div class="page" id="page-search">
-<div class="wrapper">
-  <header>
-    <div class="badge">금융위원회 Open API</div>
-    <h1>주식 시세 <span>조회</span></h1>
-    <p class="subtitle">금융위원회 주식시세정보 API — 실시간 주식 데이터 조회 시스템</p>
-  </header>
-
-  <div class="search-section">
-    <label class="search-label">종목 검색</label>
-    <div class="search-row">
-      <input class="search-input" id="searchInput" type="text"
-        placeholder="종목명 또는 종목코드 입력 (예: 삼성전자, 005930)"
-        autocomplete="off" />
-      <button class="btn" id="searchBtn" onclick="search()">조회</button>
-    </div>
-    <div class="hint">
-      빠른 검색:
-      <span onclick="quickSearch('삼성전자')">삼성전자</span> ·
-      <span onclick="quickSearch('SK하이닉스')">SK하이닉스</span> ·
-      <span onclick="quickSearch('NAVER')">NAVER</span> ·
-      <span onclick="quickSearch('카카오')">카카오</span> ·
-      <span onclick="quickSearch('현대차')">현대차</span>
-    </div>
-    <div class="date-range-row">
-      <span class="date-range-label">조회 기간</span>
-      <input class="date-input" type="date" id="startDate" />
-      <span class="date-sep">~</span>
-      <input class="date-input" type="date" id="endDate" />
-    </div>
-    <div class="options-row">
-      <div class="select-wrap">
-        <select id="marketType">
-          <option value="">전체 시장</option>
-          <option value="KOSPI">KOSPI</option>
-          <option value="KOSDAQ">KOSDAQ</option>
-          <option value="KONEX">KONEX</option>
-        </select>
-      </div>
-      <div class="select-wrap">
-        <select id="numRows">
-          <option value="10">10건</option>
-          <option value="20" selected>20건</option>
-          <option value="50">50건</option>
-          <option value="100">100건</option>
-        </select>
-      </div>
-    </div>
-    <div class="btn-row">
-      <button class="btn" id="searchBtn2" onclick="search()">조회</button>
-    </div>
-  </div>
-
-  <div class="error-box" id="errorBox"><span>⚠</span><span id="errorMsg"></span></div>
-  <div class="loading" id="loading"><div class="spinner"></div><div>데이터를 불러오는 중...</div></div>
-
-  <div class="result-card" id="resultCard">
-    <div class="card-header" id="cardHeader"></div>
-    <div class="price-section" id="priceSection"></div>
-    <div class="stats-grid" id="statsGrid"></div>
-    <div style="padding:16px 24px;border-top:1px solid var(--border)">
-      <button class="add-portfolio-btn" id="addToPortfolioBtn" onclick="addCurrentToPortfolio()">＋ 포트폴리오에 추가</button>
-    </div>
-  </div>
-
-  <div class="result-card" id="tableCard">
-    <div class="table-wrap">
-      <table id="resultTable">
-        <thead id="tableHead"></thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-    </div>
-    <div class="info-strip" id="infoStrip"></div>
-    <div class="pagination" id="pagination"></div>
-  </div>
-</div>
-</div>
-
-<!-- Edit Modal -->
-<div class="modal-overlay" id="editModal">
-  <div class="modal">
-    <h2>종목 수정</h2>
-    <input type="hidden" id="editId" />
-    <div class="field">
-      <label>종목명</label>
-      <input type="text" id="editName" />
-    </div>
-    <div class="field">
-      <label>보유 주식수</label>
-      <input type="number" id="editQty" min="1" />
-    </div>
-    <div class="field">
-      <label>평균 매입가 (원)</label>
-      <input type="number" id="editAvgPrice" min="0" />
-    </div>
-    <div class="modal-btns">
-      <button class="btn-ghost" onclick="closeModal()">취소</button>
-      <button class="btn" onclick="saveEdit()">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- Toast -->
-<div class="toast" id="toast"></div>
-
-<script>
-/* ────────────────────────────── API & constants ────────────────────────────── */
-const API_KEY = 'dc8294cd0177c5d51b45be29652fb691c4b18e055f22c87b0967ca1a78c7df0a';
-const GSHEET_URL = 'https://script.google.com/macros/s/AKfycbwmBcqZWRA075RZwJHSgZ7E58ZhyirRI785yS1ApRZTTg6x_qT9e99ovn1mC3mU-4VV/exec';
-const BASE_URL = 'https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo';
-
-/* ────────────────────────────── Portfolio state ────────────────────────────── */
-let portfolio = JSON.parse(localStorage.getItem('portfolio') || '[]');
-
-function savePortfolio() {
-  localStorage.setItem('portfolio', JSON.stringify(portfolio));
-  syncToSheet();
-}
-
-/* ── Google Sheets 자동 동기화 (조용히) ── */
-async function syncToSheet() {
-  try {
-    await fetch(GSHEET_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'save', portfolio }),
-    });
-  } catch(e) {
-    console.warn('Sheets 동기화 실패:', e);
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
   }
-}
 
-/* ── Google Sheets 수동 저장 (토스트 알림) ── */
-async function saveToSheet() {
-  if (portfolio.length === 0) { showToast('저장할 종목이 없습니다.', 'var(--red)'); return; }
-  const btn = document.getElementById('saveSheetBtn');
-  btn.disabled = true;
-  btn.textContent = '저장 중...';
-  try {
-    const resp = await fetch(GSHEET_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'save', portfolio }),
-    });
-    const json = await resp.json();
-    if (json.status === 'ok') {
-      showToast(`☁️ ${portfolio.length}개 종목 클라우드 저장 완료!`);
-    } else {
-      showToast('저장 실패: ' + (json.msg || '알 수 없는 오류'), 'var(--red)');
-    }
-  } catch(e) {
-    showToast('클라우드 저장 실패: ' + e.message, 'var(--red)');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '☁️ 클라우드에 저장하기';
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,170,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,170,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Tab nav ── */
+  .tab-nav {
+    position: relative;
+    z-index: 10;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 32px;
+    gap: 4px;
+  }
+
+  .tab-logo {
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: var(--accent);
+    margin-right: 24px;
+    padding: 16px 0;
+    white-space: nowrap;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 18px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* ── Pages ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ── */
+  header { margin-bottom: 40px; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,212,170,0.1);
+    border: 1px solid rgba(0,212,170,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  h1 {
+    font-size: clamp(26px, 5vw, 40px);
+    font-weight: 900;
+    letter-spacing: -1px;
+    line-height: 1.15;
+  }
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    color: var(--text-muted);
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 300;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .card-title {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* ── Summary strip ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+  }
+
+  .summary-item {
+    padding: 22px 18px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    min-width: 0;
+    overflow: hidden;
+  }
+  .summary-item:nth-child(2n)   { border-right: none; }
+  .summary-item:nth-child(3),
+  .summary-item:nth-child(4)    { border-bottom: none; }
+
+  .summary-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 10px;
+    white-space: nowrap;
+  }
+
+  .summary-val {
+    font-size: clamp(14px, 3.8vw, 22px);
+    font-weight: 900;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -1px;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .summary-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+
+  .up { color: var(--red); }
+  .down { color: var(--accent2); }
+  .flat { color: var(--text-muted); }
+
+  /* ── Add form ── */
+  .add-form {
+    padding: 32px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .add-search-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    width: 100%;
+    max-width: 520px;
+    position: relative;
+  }
+
+  .add-search-row .field { flex: 1; }
+
+  /* 드롭다운 앵커: 검색행 전체 기준 relative */
+  .stock-search-wrap {
+    position: static;
+    flex: 1;
+  }
+
+  /* 드롭다운: 검색행(입력창+버튼) 전체 너비 기준 */
+  .stock-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    z-index: 9999;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.65);
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .stock-dropdown.show { display: block; }
+
+  .stock-dropdown::-webkit-scrollbar { width: 5px; }
+  .stock-dropdown::-webkit-scrollbar-track { background: transparent; }
+  .stock-dropdown::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+  .stock-dropdown::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  .dropdown-count {
+    padding: 6px 16px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.3px;
+    position: sticky;
+    top: 0;
+  }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    gap: 12px;
+  }
+
+  .dropdown-item:last-child { border-bottom: none; }
+  .dropdown-item:hover { background: rgba(0,212,170,0.08); }
+
+  .dropdown-item-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    white-space: normal;
+    word-break: keep-all;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dropdown-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+  }
+
+  .dropdown-item-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .dropdown-item-mkt {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(79,142,247,0.12);
+    color: var(--accent2);
+    border: 1px solid rgba(79,142,247,0.25);
+    white-space: nowrap;
+  }
+
+  .dropdown-loading {
+    padding: 20px 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .dropdown-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  /* selected stock chip */
+  .selected-chip {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,212,170,0.08);
+    border: 1px solid rgba(0,212,170,0.3);
+    border-radius: 10px;
+    padding: 10px 16px;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .selected-chip.show { display: flex; }
+
+  .chip-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .chip-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .chip-mkt {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(79,142,247,0.12);
+    color: var(--accent2);
+    border: 1px solid rgba(79,142,247,0.2);
+  }
+
+  .chip-clear {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.2s;
+  }
+
+  .chip-clear:hover { color: var(--red); }
+
+  .add-qty-row {
+    display: none;
+    gap: 10px;
+    align-items: flex-end;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .add-qty-row.show { display: flex; }
+
+  @media(max-width:600px){
+    .add-form { padding: 20px 16px; }
+    .add-search-row, .add-qty-row, .selected-chip { max-width: 100%; }
+    .add-qty-row { flex-wrap: wrap; }
+    .add-qty-row .field { flex: 1 1 140px; }
+  }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,170,0.1);
+  }
+
+  .field input::placeholder { color: var(--text-muted); font-family: 'Noto Sans KR',sans-serif; font-size: 13px; }
+
+  .btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    저장하기';
   }
 }
 
