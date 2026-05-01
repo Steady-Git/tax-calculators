@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>의약품 정보 조회</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --surface: #fffdf8;
+    --surface2: #f0ebe0;
+    --border: #d6ccb4;
+    --accent: #2c5f2e;
+    --accent2: #4a8c4d;
+    --text: #1a1a14;
+    --text-muted: #6b6550;
+    --pill: #e8f5e9;
+    --pill-text: #2c5f2e;
+    --danger: #8b2500;
+    --shadow: 0 2px 16px rgba(44,95,46,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Serif KR', serif;
+    min-height: 100vh;
+  }
+
+  /* 배경 패턴 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(44,95,46,0.04) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(74,140,77,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* 헤더 */
+  header {
+    margin-bottom: 40px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 28px;
+  }
+
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--pill);
+    color: var(--pill-text);
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.08em;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+
+  .header-badge::before {
+    content: '●';
+    font-size: 8px;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  h1 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--text);
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    margin-top: 10px;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 300;
+  }
+
+  /* 검색 영역 */
+  .search-section {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: var(--shadow);
+    margin-bottom: 32px;
+  }
+
+  .search-section h2 {
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group.full {
+    grid-column: 1 / -1;
+  }
+
+  label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+  }
+
+  input, select {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: 'Noto Serif KR', serif;
+    color: var(--text);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(44,95,46,0.1);
+  }
+
+  input::placeholder {
+    color: #b0a88a;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn-search {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-family: 'Noto Serif KR', serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-search:hover { background: var(--accent2); }
+  .btn-search:active { transform: scale(0.98); }
+
+  .btn-reset {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 20px;
+    font-size: 13px;
+    font-family: 'Noto Serif KR', serif;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* 로딩 */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 48px;
+    color: var(--text-muted);
+  }
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 에러 */
+  .error-box {
+    display: none;
+    background: #fff5f5;
+    border: 1.5px solid #f5c6c6;
+    border-radius: 12px;
+    padding: 18px 22px;
+    color: var(--danger);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  /* 결과 수 */
+  .result-meta {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .result-count strong {
+    color: var(--accent);
+    font-size: 16px;
+  }
+
+  /* 카드 목록 */
+  .result-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .drug-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    animation: fadeUp 0.3s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .drug-card:hover {
+    border-color: var(--accent2);
+    box-shadow: 0 4px 24px rgba(44,95,46,0.12);
+    transform: translateY(-2px);
+  }
+
+  .drug-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .drug-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .drug-eng {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 3px;
+  }
+
+  .drug-tag {
+    flex-shrink: 0;
+    background: var(--pill);
+    color: var(--pill-text);
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .drug-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .info-item {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .info-label {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .info-value {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .drug-effect {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .drug-image {
+    width: 100%;
+    max-height: 120px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: var(--surface2);
+    padding: 8px;
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  /* 페이지네이션 */
+  .pagination {
+    display: none;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 32px;
+    flex-wrap: wrap;
+  }
+
+  .page-btn {
+    min-width: 38px;
+    height: 38px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 10px;
+  }
+
+  .page-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .page-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* 빈 결과 */
+  .empty {
+    display: none;
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text-muted);
+  }
+
+  .empty-icon { font-size: 48px; margin-bottom: 16px; }
+  .empty p { font-size: 15px; }
+
+  /* 반응형 */
+  @media (max-width: 600px) {
+    h1 { font-size: 26px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .drug-info-grid { grid-template-columns: 1fr 1fr; }
+    .wrap { padding: 28px 16px 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="header-badge">식품의약품안전처 API · e약은요</div>
+    <h1>의약품 <span>정보 조회</span></h1>
+    <p class="subtitle">식품의약품안전처 의약품개요정보(e약은요) 서비스를 통해 의약품 정보를 검색합니다.</p>
+  </header>
+
+  <section class="search-section">
+    <h2>검색 조건</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>의약품명</label>
+        <input type="text" id="itemName" placeholder="예: 타이레놀">
+      </div>
+      <div class="form-group">
+        <label>업체명</label>
+        <input type="text" id="entpName" placeholder="예: 한국존슨앤드존슨">
+      </div>
+      <div class="form-group">
+        <label>주성분 (효능군)</label>
+        <input type="text" id="itemIngr" placeholder="예: 아세트아미노펜">
+      </div>
+      <div class="form-group">
+        <label>결과 수</label>
+        <select id="numOfRows">
+          <option value="10">10개</option>
+          <option value="20" selected>20개</option>
+          <option value="50">50개</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-search" onclick="search(1)">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        검색
+      </button>
+      <button class="btn-reset" onclick="resetForm()">초기화</button>
+    </div>
+  </section>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>의약품 정보를 불러오는 중입니다...</p>
+  </div>
+
+  <div class="result-meta" id="resultMeta">
+    <div class="result-count">총 <strong id="totalCount">0</strong>건의 검색 결과</div>
+    <div id="pageInfo"></div>
+  </div>
+
+  <div class="empty" id="emptyBox">
+    <div class="empty-icon">💊</div>
+    <p>검색 결과가 없습니다.<br>다른 검색어를 입력해보세요.</p>
+  </div>
+
+  <div class="result-list" id="resultList"></div>
+
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<script>
+const API_KEY = 'dc8294cd0177c5d51b45be29652fb691c4b18e055f22c87b0967ca1a78c7df0a';
+const BASE_URL = 'https://apis.data.go.kr/1471000/DrbEasyDrugInfoService/getDrbEasyDrugList';
+
+let currentPage = 1;
+let totalPages = 1;
+
+async function search(page = 1) {
+  const itemName = document.getElementById('itemName').value.trim();
+  const entpName = document.getElementById('entpName').value.trim();
+  const itemIngr = document.getElementById('itemIngr').value.trim();
+  const numOfRows = document.getElementById('numOfRows').value;
+
+  if (!itemName && !entpName && !itemIngr) {
+    showError('검색 조건을 하나 이상 입력해주세요.');
+    return;
+  }
+
+  currentPage = page;
+  hideAll();
+  document.getElementById('loading').style.display = 'block';
+
+  const params = new URLSearchParams({
+    serviceKey: API_KEY,
+    pageNo: page,
+    numOfRows: numOfRows,
+    type: 'json',
+  });
+
+  if (itemName) params.append('itemName', itemName);
+  if (entpName) params.append('entpName', entpName);
+  if (itemIngr) params.append('itemIngr', itemIngr);
+
+  try {
+    const res = await fetch(`${BASE_URL}?${params.toString()}`);
+    const text = await res.text();
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // XML 오류 응답 처리
+      if (text.includes('SERVICE_KEY_IS_NOT_REGISTERED_ERROR')) {
+        throw new Error('인증키가 올바르지 않습니다. CORS 제한으로 인해 브라우저에서 직접 호출이 차단될 수 있습니다.\n\n※ 공공데이터포털 API는 브라우저 직접 호출 시 CORS 오류가 발생할 수 있습니다.\nEncoding된 인증키 또는 서버 프록시를 통해 호출하거나,\n크롬 CORS 해제 확장 프로그램을 사용해보세요.');
+      }
+      throw new Error('응답 파싱 실패: ' + text.slice(0, 200));
+    }
+
+    document.getElementById('loading').style.display = 'none';
+
+    const body = data?.body;
+    if (!body || !body.items || body.items.length === 0) {
+      document.getElementById('emptyBox').style.display = 'block';
+      return;
+    }
+
+    const total = body.totalCount;
+    const numRows = parseInt(numOfRows);
+    totalPages = Math.ceil(total / numRows);
+
+    document.getElementById('totalCount').textContent = total.toLocaleString();
+    document.getElementById('pageInfo').textContent = `${page} / ${totalPages} 페이지`;
+    document.getElementById('resultMeta').style.display = 'flex';
+
+    renderCards(body.items);
+    renderPagination(total, numRows, page);
+
+  } catch (e) {
+    document.getElementById('loading').style.display = 'none';
+    showError('API 호출 오류: ' + e.message);
+  }
+}
+
+function renderCards(items) {
+  const list = document.getElementById('resultList');
+  list.innerHTML = '';
+
+  items.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'drug-card';
+    card.style.animationDelay = `${i * 40}ms`;
+
+    const efcyText = stripHTML(item.efcyQesitm || '');
+    const useMethod = stripHTML(item.useMethodQesitm || '');
+    const atpnWarnText = stripHTML(item.atpnWarnQesitm || '');
+
+    card.innerHTML = `
+      ${item.itemImage ? `<img class="drug-image" src="${item.itemImage}" alt="${item.itemName}" onerror="this.style.display='none'">` : ''}
+      <div class="drug-card-header">
+        <div>
+          <div class="drug-name">${item.itemName || '—'}</div>
+          <div class="drug-eng">${item.entpName || ''}</div>
+        </div>
+        ${item.efcyQesitm ? `<span class="drug-tag">처방정보</span>` : ''}
+      </div>
+      <div class="drug-info-grid">
+        ${item.efcyQesitm ? `<div class="info-item"><div class="info-label">효능</div><div class="info-value">${truncate(efcyText, 40)}</div></div>` : ''}
+        ${item.useMethodQesitm ? `<div class="info-item"><div class="info-label">용법·용량</div><div class="info-value">${truncate(useMethod, 40)}</div></div>` : ''}
+        ${item.atpnWarnQesitm ? `<div class="info-item"><div class="info-label">경고</div><div class="info-value" style="color:var(--danger)">${truncate(atpnWarnText, 40)}</div></div>` : ''}
+        ${item.depositMethodQesitm ? `<div class="info-item"><div class="info-label">보관법</div><div class="info-value">${truncate(stripHTML(item.depositMethodQesitm), 40)}</div></div>` : ''}
+      </div>
+      ${efcyText ? `<div class="drug-effect">${efcyText}</div>` : ''}
+    `;
+
+    card.addEventListener('click', () => showDetail(item));
+    list.appendChild(card);
+  });
+}
+
+function showDetail(item) {
+  const fields = [
+    ['itemName', '의약품명'],
+    ['entpName', '업체명'],
+    ['efcyQesitm', '효능·효과'],
+    ['useMethodQesitm', '용법·용량'],
+    ['atpnWarnQesitm', '경고사항'],
+    ['atpnQesitm', '주의사항'],
+    ['intrcQesitm', '상호작용'],
+    ['seQesitm', '부작용'],
+    ['depositMethodQesitm', '보관법'],
+  ];
+
+  let html = '';
+  fields.forEach(([key, label]) => {
+    if (item[key]) {
+      html += `<div style="margin-bottom:18px">
+        <div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#6b6550;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${label}</div>
+        <div style="font-size:14px;line-height:1.8;color:#1a1a14">${stripHTML(item[key])}</div>
+      </div>`;
+    }
+  });
+
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(26,26,20,.55);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)';
+  modal.innerHTML = `
+    <div style="background:#fffdf8;border-radius:18px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto;padding:32px;border:1.5px solid #d6ccb4;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;gap:12px">
+        <div>
+          <div style="font-size:22px;font-weight:700;margin-bottom:4px">${item.itemName}</div>
+          <div style="font-size:13px;color:#6b6550;font-family:'JetBrains Mono',monospace">${item.entpName || ''}</div>
+        </div>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:1.5px solid #d6ccb4;border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:18px;line-height:1;flex-shrink:0;color:#6b6550">×</button>
+      </div>
+      ${item.itemImage ? `<img src="${item.itemImage}" style="width:100%;max-height:160px;object-fit:contain;border-radius:10px;background:#f0ebe0;padding:12px;margin-bottom:20px" onerror="this.style.display='none'">` : ''}
+      ${html}
+    </div>
+  `;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function renderPagination(total, numRows, current) {
+  const pages = Math.ceil(total / numRows);
+  const pg = document.getElementById('pagination');
+  if (pages <= 1) { pg.style.display = 'none'; return; }
+
+  pg.style.display = 'flex';
+  pg.innerHTML = '';
+
+  const range = 5;
+  let start = Math.max(1, current - Math.floor(range / 2));
+  let end = Math.min(pages, start + range - 1);
+  if (end - start < range - 1) start = Math.max(1, end - range + 1);
+
+  const prev = document.createElement('button');
+  prev.className = 'page-btn';
+  prev.textContent = '‹';
+  prev.disabled = current === 1;
+  prev.onclick = () => search(current - 1);
+  pg.appendChild(prev);
+
+  for (let p = start; p <= end; p++) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (p === current ? ' active' : '');
+    btn.textContent = p;
+    btn.onclick = () => search(p);
+    pg.appendChild(btn);
+  }
+
+  const next = document.createElement('button');
+  next.className = 'page-btn';
+  next.textContent = '›';
+  next.disabled = current === pages;
+  next.onclick = () => search(current + 1);
+  pg.appendChild(next);
+}
+
+function hideAll() {
+  ['errorBox', 'emptyBox', 'resultMeta', 'pagination'].forEach(id => {
+    const el = document.getElementById(id);
+    el.style.display = 'none';
+  });
+  document.getElementById('resultList').innerHTML = '';
+}
+
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  box.style.display = 'block';
+  box.innerHTML = '⚠️ ' + msg.replace(/\n/g, '<br>');
+}
+
+function resetForm() {
+  ['itemName', 'entpName', 'itemIngr'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('numOfRows').value = '20';
+  hideAll();
+}
+
+function stripHTML(str) {
+  if (!str) return '';
+  return str.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').trim();
+}
+
+function truncate(str, max) {
+  return str.length > max ? str.slice(0, max) + '…' : str;
+}
+
+// 엔터키 검색
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') search(1);
+});
+</script>
+</body>
+</html>
