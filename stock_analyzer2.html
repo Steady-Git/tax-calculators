@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주식 인사이트 — 종목 분석 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #1e2330;
+    --accent: #00e5a0;
+    --accent2: #ff6b35;
+    --accent3: #4facfe;
+    --red: #ff4757;
+    --yellow: #ffd32a;
+    --text: #e8eaf0;
+    --muted: #5a6070;
+    --muted2: #3a4050;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid Background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HEADER */
+  header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 36px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,12,16,0.9);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .logo-main {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,229,160,0.4);
+  }
+
+  .logo-sub {
+    font-size: 0.7rem;
+    letter-spacing: 4px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,229,160,0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(0,229,160,0); }
+  }
+
+  .live-label {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .api-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    border: 1px solid var(--muted2);
+    border-radius: 4px;
+    color: var(--muted);
+  }
+
+  /* MAIN LAYOUT */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  /* SEARCH PANEL */
+  .search-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .search-group {
+    flex: 1;
+    min-width: 220px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  input, select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,229,160,0.15);
+  }
+
+  select option { background: var(--surface2); }
+
+  .btn {
+    padding: 12px 28px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+  .btn-primary:hover {
+    background: #00ffb3;
+    box-shadow: 0 4px 20px rgba(0,229,160,0.4);
+    transform: translateY(-1px);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--accent3);
+    border: 1px solid var(--accent3);
+  }
+  .btn-secondary:hover {
+    background: rgba(79,172,254,0.1);
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 6px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+
+  .tab.active {
+    background: var(--surface2);
+    color: var(--accent);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* CONTENT AREA */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* CARDS GRID */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover { border-color: var(--muted2); }
+
+  .card-label {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .card-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .card-value.positive { color: var(--accent); }
+  .card-value.negative { color: var(--red); }
+  .card-value.neutral { color: var(--accent3); }
+
+  .card-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* TABLE */
+  .data-table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-title {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .table-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 0.65rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    font-weight: 500;
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(30,35,48,0.5);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .badge-up { background: rgba(0,229,160,0.15); color: var(--accent); }
+  .badge-down { background: rgba(255,71,87,0.15); color: var(--red); }
+  .badge-neutral { background: rgba(79,172,254,0.15); color: var(--accent3); }
+
+  /* AI ANALYSIS */
+  .ai-panel {
+    background: linear-gradient(135deg, rgba(0,229,160,0.05), rgba(79,172,254,0.05));
+    border: 1px solid rgba(0,229,160,0.2);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ai-panel::before {
+    content: 'AI';
+    position: absolute;
+    right: 24px;
+    top: 16px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem;
+    color: rgba(0,229,160,0.06);
+    letter-spacing: 4px;
+  }
+
+  .ai-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .ai-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: #000;
+    font-weight: 700;
+  }
+
+  .ai-title {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .ai-content {
+    color: var(--text);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  .ai-loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* STATUS */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .status-icon { font-size: 1rem; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 80px 24px;
+    color: var(--muted);
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  .empty-title {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .empty-sub {
+    font-size: 0.8rem;
+    color: var(--muted2);
+  }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 4px;
+    color: var(--text);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* SIGNAL */
+  .signal {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .signal-buy { background: rgba(0,229,160,0.15); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
+  .signal-sell { background: rgba(255,71,87,0.15); color: var(--red); border: 1px solid rgba(255,71,87,0.3); }
+  .signal-hold { background: rgba(255,211,42,0.15); color: var(--yellow); border: 1px solid rgba(255,211,42,0.3); }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    header { padding: 16px 20px; }
+    main { padding: 20px 12px; }
+    .search-panel { padding: 20px 16px; }
+    .logo-main { font-size: 1.4rem; }
+    td, th { padding: 10px 10px; font-size: 0.72rem; }
+  }
+
+  /* MINI CHART */
+  .mini-bar {
+    display: inline-block;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--accent);
+    opacity: 0.6;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  .info-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .info-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .info-chip span {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* WATCHLIST */
+  .watchlist-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  .watchlist-item:hover { background: rgba(255,255,255,0.02); }
+  .watchlist-item:last-child { border-bottom: none; }
+  .wl-name { font-weight: 500; font-size: 0.88rem; }
+  .wl-code { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+
+  /* ERROR */
+  .error-box {
+    background: rgba(255,71,87,0.08);
+    border: 1px solid rgba(255,71,87,0.25);
+    border-radius: 8px;
+    padding: 14px 18px;
+    color: var(--red);
+    font-size: 0.82rem;
+    margin-bottom: 16px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-main">STOCKWISE</div>
+    <div class="logo-sub">주식 인사이트 대시보드</div>
+  </div>
+  <div class="header-meta">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="live-dot"></div>
+      <div class="live-label">LIVE</div>
+    </div>
+    <div class="api-badge">FSC OPEN API · DATA.GO.KR</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- API KEY INFO -->
+  <div class="status-bar">
+    <span class="status-icon">🔑</span>
+    <span>🌐 CORS 프록시(allorigins.win) 사용 중 — 데이터가 안 뜨면 <b>로컬 서버 실행</b>이 필요할 수 있습니다</span>
+  </div>
+
+  <!-- API KEY INPUT -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 24px;margin-bottom:24px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+    <div style="flex:1;min-width:280px;">
+      <label>일반 인증키 (Decoding — 선택사항)</label>
+      <input type="text" id="apiKey" placeholder="dc8294cd0177c5d..." style="font-size:0.78rem;" value="dc8294cd0177c5d51b45be29652fb691c4b18e055f22c87b0967ca1a78c7df0a">
+    </div>
+    <button class="btn btn-secondary" onclick="saveKey()">저장</button>
+  </div>
+
+  <!-- SEARCH PANEL -->
+  <div class="search-panel">
+    <div class="search-group">
+      <label>종목코드 (6자리)</label>
+      <input type="text" id="corpCode" placeholder="예: 005930 (삼성전자)" maxlength="6">
+    </div>
+    <div class="search-group">
+      <label>기업명 검색</label>
+      <input type="text" id="corpName" placeholder="예: 삼성전자">
+    </div>
+    <div class="search-group" style="min-width:150px;max-width:180px;">
+      <label>사업연도</label>
+      <select id="bizYear">
+        <option value="2024">2024</option>
+        <option value="2023">2023</option>
+        <option value="2022">2022</option>
+        <option value="2021">2021</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="searchBtn" onclick="startAnalysis()">📊 분석 시작</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('overview')">📈 기업 개요</button>
+    <button class="tab" onclick="switchTab('finance')">💰 재무 분석</button>
+    <button class="tab" onclick="switchTab('stock')">📉 주식 발행</button>
+    <button class="tab" onclick="switchTab('krx')">🏦 KRX 정보</button>
+    <button class="tab" onclick="switchTab('ai')">🤖 AI 투자 의견</button>
+  </div>
+
+  <!-- TAB: OVERVIEW -->
+  <div class="tab-content active" id="tab-overview">
+    <div id="overviewContent">
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-title">종목코드 또는 기업명을 입력하세요</div>
+        <div class="empty-sub">금융위원회 오픈API를 통해 실제 기업 정보를 불러옵니다</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: FINANCE -->
+  <div class="tab-content" id="tab-finance">
+    <div id="financeContent">
+      <div class="empty-state">
+        <div class="empty-icon">💼</div>
+        <div class="empty-title">재무정보를 불러오려면 분석을 시작하세요</div>
+        <div class="empty-sub">손익계산서 · 재무상태표 · 현금흐름표</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: STOCK -->
+  <div class="tab-content" id="tab-stock">
+    <div id="stockContent">
+      <div class="empty-state">
+        <div class="empty-icon">📜</div>
+        <div class="empty-title">주식 발행 내역을 불러오세요</div>
+        <div class="empty-sub">주식 발행·소각·의무보호예수 정보</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: KRX -->
+  <div class="tab-content" id="tab-krx">
+    <div id="krxContent">
+      <div class="empty-state">
+        <div class="empty-icon">🏛️</div>
+        <div class="empty-title">KRX 상장 종목 정보</div>
+        <div class="empty-sub">코스피·코스닥 상장 기업 목록 조회</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: AI -->
+  <div class="tab-content" id="tab-ai">
+    <div id="aiContent">
+      <div class="empty-state">
+        <div class="empty-icon">🤖</div>
+        <div class="empty-title">AI 투자 의견 분석</div>
+        <div class="empty-sub">수집된 데이터를 바탕으로 AI가 투자 의견을 제시합니다</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// CORS 우회: allorigins 프록시 사용
+const BASE = 'https://apis.data.go.kr/1160100';
+const PROXY = 'https://api.allorigins.win/get?url=';
+let apiKey = 'dc8294cd0177c5d51b45be29652fb691c4b18e055f22c87b0967ca1a78c7df0a';
+let collectedData = {};
+
+function saveKey() {
+  apiKey = document.getElementById('apiKey').value.trim() || apiKey;
+  showStatus('✅ 인증키가 저장되었습니다.');
+}
+
+function showStatus(msg) {
+  const bar = document.querySelector('.status-bar');
+  bar.innerHTML = `<span class="status-icon">ℹ️</span><span>${msg}</span>`;
+  setTimeout(() => {
+    bar.innerHTML = `<span class="status-icon">🔑</span><span>금융위원회 오픈API 연동 중 (allorigins 프록시)</span>`;
+  }, 3000);
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const tabs = ['overview','finance','stock','krx','ai'];
+    t.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => {
+    c.classList.toggle('active', c.id === 'tab-' + name);
+  });
+}
+
+function loading(el, msg='데이터 로딩 중...') {
+  document.getElementById(el).innerHTML = `
+    <div class="empty-state">
+      <div class="spinner" style="margin:0 auto 16px;width:36px;height:36px;"></div>
+      <div class="empty-sub">${msg}</div>
+    </div>`;
+}
+
+function errorBox(el, msg) {
+  document.getElementById(el).innerHTML = `<div class="error-box">⚠️ ${msg}</div>`;
+}
+
+async function fetchAPI(endpoint, params) {
+  const key = document.getElementById('apiKey').value.trim() || apiKey;
+  const targetUrl = new URL(BASE + endpoint);
+  targetUrl.searchParams.set('serviceKey', key);
+  targetUrl.searchParams.set('resultType', 'json');
+  targetUrl.searchParams.set('numOfRows', '100');
+  targetUrl.searchParams.set('pageNo', '1');
+  Object.entries(params).forEach(([k,v]) => targetUrl.searchParams.set(k, v));
+
+  // CORS 프록시를 통해 호출
+  const proxyUrl = PROXY + encodeURIComponent(targetUrl.toString());
+  const res = await fetch(proxyUrl);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const wrapper = await res.json();
+  // allorigins는 { contents: "실제JSON문자열" } 형태로 반환
+  const data = JSON.parse(wrapper.contents);
+  const body = data?.response?.body;
+  if (!body) throw new Error('응답 구조 오류');
+  if (body.totalCount === 0) return [];
+  const items = body?.items?.item;
+  if (!items) return [];
+  return Array.isArray(items) ? items : [items];
+}
+
+async function startAnalysis() {
+  const code = document.getElementById('corpCode').value.trim();
+  const name = document.getElementById('corpName').value.trim();
+  const year = document.getElementById('bizYear').value;
+
+  if (!code && !name) {
+    alert('종목코드 또는 기업명을 입력해주세요.');
+    return;
+  }
+
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 분석 중...';
+
+  collectedData = { code, name, year };
+
+  // Load all tabs in parallel
+  await Promise.all([
+    loadOverview(code, name),
+    loadFinance(code, name, year),
+    loadStock(code, name, year),
+    loadKRX(code, name),
+  ]);
+
+  btn.disabled = false;
+  btn.textContent = '📊 분석 시작';
+
+  // Generate AI summary after data is collected
+  await generateAI();
+}
+
+/* ─── OVERVIEW: 기업기본정보 ─── */
+async function loadOverview(code, name) {
+  loading('overviewContent', '기업 기본정보 조회 중...');
+  try {
+    const params = {};
+    if (code) params.srtnCd = code;
+    else if (name) params.corpNm = name;
+
+    const items = await fetchAPI('/service/GetCorpBasicInfoService_V2/%EA%B3%84%EC%97%B4%ED%9A%8C%EC%82%AC%EC%A1%B0%ED%9A%8C', params).catch(() => null)
+                || await fetchAPI('/service/GetCorpBasicInfoService_V2/%EA%B8%B0%EC%97%85%EA%B0%9C%EC%9A%94%EC%A1%B0%ED%9A%8C', params).catch(() => []);
+
+    // Try 기업개요
+    let corpItems = [];
+    try {
+      const p2 = {};
+      if (code) p2.srtnCd = code; else p2.corpNm = name;
+      corpItems = await fetchAPI('/service/GetCorpBasicInfoService_V2/%EA%B8%B0%EC%97%85%EA%B0%9C%EC%9A%94%EC%A1%B0%ED%9A%8C', p2);
+    } catch(e) {}
+
+    collectedData.overview = corpItems;
+
+    if (!corpItems || corpItems.length === 0) {
+      document.getElementById('overviewContent').innerHTML = `
+        <div class="error-box">기업 기본정보를 찾을 수 없습니다. API 응답이 없거나 데이터가 없습니다.</div>
+        <div style="color:var(--muted);font-size:0.82rem;padding:16px;line-height:1.8;">
+          <strong style="color:var(--text)">💡 해결 방법:</strong><br>
+          1. 인증키가 정확한지 확인 (Decoding된 일반 인증키 사용)<br>
+          2. 종목코드는 6자리 숫자 (예: 005930)<br>
+          3. 공공데이터포털에서 해당 API 활용승인 확인<br>
+          4. API 서버가 프록시를 차단하는 경우 → <code style="color:var(--accent)">python -m http.server 8080</code> 으로 로컬에서 실행<br><br>
+          <strong style="color:var(--text)">📋 종목코드 예시:</strong><br>
+          005930 삼성전자 · 000660 SK하이닉스 · 035420 NAVER · 051910 LG화학 · 006400 삼성SDI
+        </div>`;
+      return;
+    }
+
+    const c = corpItems[0];
+    document.getElementById('overviewContent').innerHTML = `
+      <div class="section-title">기업 개요</div>
+      <div class="info-row">
+        <div class="info-chip">기업명 <span>${c.corpNm || '-'}</span></div>
+        <div class="info-chip">종목코드 <span>${c.srtnCd || code || '-'}</span></div>
+        <div class="info-chip">업종 <span>${c.indutyCode || c.ksicNm || '-'}</span></div>
+        <div class="info-chip">상장일 <span>${c.lstgDt || '-'}</span></div>
+        <div class="info-chip">결산월 <span>${c.settlMm || '-'}월</span></div>
+        <div class="info-chip">법인구분 <span>${c.corpKind || '-'}</span></div>
+      </div>
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-label">자본금</div>
+          <div class="card-value neutral">${fmtNum(c.payCap) || '-'}</div>
+          <div class="card-sub">원 단위</div>
+        </div>
+        <div class="card">
+          <div class="card-label">발행주식 수</div>
+          <div class="card-value">${fmtNum(c.issuStckCnt) || '-'}</div>
+          <div class="card-sub">주</div>
+        </div>
+        <div class="card">
+          <div class="card-label">대표이사</div>
+          <div class="card-value" style="font-size:1.1rem;">${c.ceoNm || '-'}</div>
+          <div class="card-sub">${c.adres || ''}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">홈페이지</div>
+          <div class="card-value" style="font-size:0.9rem;word-break:break-all;">
+            ${c.hmpgUrl ? `<a href="${c.hmpgUrl}" target="_blank" style="color:var(--accent3)">${c.hmpgUrl}</a>` : '-'}
+          </div>
+        </div>
+      </div>
+      <div class="data-table-wrap">
+        <div class="table-header">
+          <div class="table-title">계열회사 목록</div>
+          <div class="table-count">${items ? items.length : 0}개</div>
+        </div>
+        ${items && items.length > 0 ? `
+        <table>
+          <tr><th>기업명</th><th>종목코드</th><th>관계</th></tr>
+          ${items.slice(0,10).map(i=>`
+            <tr>
+              <td>${i.corpNm||'-'}</td>
+              <td><span class="badge badge-neutral">${i.srtnCd||'-'}</span></td>
+              <td>${i.relnCmpnNm||'-'}</td>
+            </tr>`).join('')}
+        </table>` : `<div style="padding:20px;text-align:center;color:var(--muted);font-size:0.82rem;">계열회사 정보 없음</div>`}
+      </div>
+    `;
+  } catch(e) {
+    errorBox('overviewContent', `기업 정보 로드 실패: ${e.message}`);
+  }
+}
+
+/* ─── FINANCE: 기업재무정보 ─── */
+async function loadFinance(code, name, year) {
+  loading('financeContent', '재무정보 조회 중...');
+  try {
+    const p = { bizYear: year };
+    if (code) p.srtnCd = code; else p.corpNm = name;
+
+    const [income, balance] = await Promise.all([
+      fetchAPI('/service/GetFinaStatInfoService_V2/%EC%9A%94%EC%95%BD%EC%9E%AC%EB%AC%B4%EC%A0%9C%ED%91%9C%EC%A1%B0%ED%9A%8C', p).catch(()=>[]),
+      fetchAPI('/service/GetFinaStatInfoService_V2/%EC%9E%AC%EB%AC%B4%EC%83%81%ED%83%9C%ED%91%9C%EC%A1%B0%ED%9A%8C', p).catch(()=>[]),
+    ]);
+
+    collectedData.finance = { income, balance };
+
+    if (!income.length && !balance.length) {
+      document.getElementById('financeContent').innerHTML = `
+        <div class="error-box">재무 데이터가 없습니다. 종목코드 및 사업연도를 확인하세요.</div>`;
+      return;
+    }
+
+    // Key metrics from income
+    const rev = findVal(income, 'thstrm_amount', '매출액');
+    const profit = findVal(income, 'thstrm_amount', '영업이익');
+    const netProfit = findVal(income, 'thstrm_amount', '당기순이익');
+    const assets = findVal(balance, 'thstrm_amount', '자산총계');
+    const equity = findVal(balance, 'thstrm_amount', '자본총계');
+    const debt = findVal(balance, 'thstrm_amount', '부채총계');
+
+    const roe = equity && netProfit ? ((parseNum(netProfit)/parseNum(equity))*100).toFixed(1) : '-';
+    const debtRatio = equity && debt ? ((parseNum(debt)/parseNum(equity))*100).toFixed(1) : '-';
+    const opMargin = rev && profit ? ((parseNum(profit)/parseNum(rev))*100).toFixed(1) : '-';
+
+    document.getElementById('financeContent').innerHTML = `
+      <div class="section-title">핵심 재무지표 (${year})</div>
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-label">매출액</div>
+          <div class="card-value neutral">${fmtBillion(rev)}</div>
+          <div class="card-sub">억원</div>
+        </div>
+        <div class="card">
+          <div class="card-label">영업이익</div>
+          <div class="card-value ${parseNum(profit)>0?'positive':'negative'}">${fmtBillion(profit)}</div>
+          <div class="card-sub">영업이익률 ${opMargin}%</div>
+        </div>
+        <div class="card">
+          <div class="card-label">당기순이익</div>
+          <div class="card-value ${parseNum(netProfit)>0?'positive':'negative'}">${fmtBillion(netProfit)}</div>
+          <div class="card-sub">ROE ${roe}%</div>
+        </div>
+        <div class="card">
+          <div class="card-label">자산총계</div>
+          <div class="card-value">${fmtBillion(assets)}</div>
+          <div class="card-sub">억원</div>
+        </div>
+        <div class="card">
+          <div class="card-label">자본총계</div>
+          <div class="card-value">${fmtBillion(equity)}</div>
+          <div class="card-sub">억원</div>
+        </div>
+        <div class="card">
+          <div class="card-label">부채비율</div>
+          <div class="card-value ${parseNum(debtRatio)>200?'negative':parseNum(debtRatio)>100?'':'positive'}">${debtRatio}%</div>
+          <div class="card-sub">${parseNum(debtRatio)<100?'안정':'주의'}</div>
+        </div>
+      </div>
+
+      <div class="data-table-wrap">
+        <div class="table-header">
+          <div class="table-title">요약재무제표</div>
+          <div class="table-count">${income.length}개 항목</div>
+        </div>
+        <table>
+          <tr><th>계정과목</th><th>당기</th><th>전기</th><th>전전기</th></tr>
+          ${income.slice(0,15).map(r=>`
+            <tr>
+              <td style="color:var(--text)">${r.account_nm||r.acnt_nm||'-'}</td>
+              <td>${fmtBillion(r.thstrm_amount)}</td>
+              <td style="color:var(--muted)">${fmtBillion(r.frmtrm_amount)}</td>
+              <td style="color:var(--muted2)">${fmtBillion(r.bfefrmtrm_amount)}</td>
+            </tr>`).join('')}
+        </table>
+      </div>
+
+      <div class="data-table-wrap">
+        <div class="table-header">
+          <div class="table-title">재무상태표</div>
+          <div class="table-count">${balance.length}개 항목</div>
+        </div>
+        <table>
+          <tr><th>계정과목</th><th>당기</th><th>전기</th></tr>
+          ${balance.slice(0,12).map(r=>`
+            <tr>
+              <td style="color:var(--text)">${r.account_nm||r.acnt_nm||'-'}</td>
+              <td>${fmtBillion(r.thstrm_amount)}</td>
+              <td style="color:var(--muted)">${fmtBillion(r.frmtrm_amount)}</td>
+            </tr>`).join('')}
+        </table>
+      </div>
+    `;
+  } catch(e) {
+    errorBox('financeContent', `재무 데이터 로드 실패: ${e.message}`);
+  }
+}
+
+/* ─── STOCK: 주식발행정보 ─── */
+async function loadStock(code, name, year) {
+  loading('stockContent', '주식 발행 정보 조회 중...');
+  try {
+    const p = {};
+    if (code) p.srtnCd = code; else p.corpNm = name;
+    if (year) p.beginBasDt = `${year}0101`, p.endBasDt = `${year}1231`;
+
+    const [issuance, mandatory] = await Promise.all([
+      fetchAPI('/GetStocIssuInfoService_V3/%EC%A3%BC%EC%8B%9D%EB%B0%9C%ED%96%89%EB%82%B4%EC%97%AD%EC%A1%B0%ED%9A%8C', p).catch(()=>[]),
+      fetchAPI('/GetStocIssuInfoService_V3/%EC%9D%98%EB%AC%B4%EB%B3%B4%ED%98%B8%EC%98%88%EC%88%98%EB%B0%98%ED%99%98%EC%A0%95%EB%B3%B4%EC%A1%B0%ED%9A%8C', p).catch(()=>[]),
+    ]);
+
+    collectedData.stock = { issuance, mandatory };
+
+    if (!issuance.length && !mandatory.length) {
+      document.getElementById('stockContent').innerHTML = `<div class="error-box">주식 발행 데이터가 없습니다.</div>`;
+      return;
+    }
+
+    document.getElementById('stockContent').innerHTML = `
+      <div class="section-title">주식 발행 현황</div>
+      ${issuance.length > 0 ? `
+      <div class="data-table-wrap">
+        <div class="table-header">
+          <div class="table-title">주식 발행 내역</div>
+          <div class="table-count">${issuance.length}건</div>
+        </div>
+        <table>
+          <tr><th>기준일</th><th>기업명</th><th>종목코드</th><th>발행주식수</th><th>종류</th></tr>
+          ${issuance.slice(0,20).map(r=>`
+            <tr>
+              <td>${r.basDt||r.issuDt||'-'}</td>
+              <td style="color:var(--text)">${r.corpNm||'-'}</td>
+              <td><span class="badge badge-neutral">${r.srtnCd||'-'}</span></td>
+              <td>${fmtNum(r.issuStckCnt||r.stckQty)}</td>
+              <td>${r.stckKnd||r.issuKnd||'-'}</td>
+            </tr>`).join('')}
+        </table>
+      </div>` : ''}
+
+      ${mandatory.length > 0 ? `
+      <div class="data-table-wrap">
+        <div class="table-header">
+          <div class="table-title">의무보호예수 반환 정보</div>
+          <div class="table-count">${mandatory.length}건</div>
+        </div>
+        <table>
+          <tr><th>반환일</th><th>기업명</th><th>주식수</th><th>사유</th></tr>
+          ${mandatory.slice(0,15).map(r=>`
+            <tr>
+              <td>${r.rtrnDt||r.basDt||'-'}</td>
+              <td style="color:var(--text)">${r.corpNm||'-'}</td>
+              <td>${fmtNum(r.stckQty||r.issuStckCnt)}</td>
+              <td><span class="badge badge-down">${r.rtrnRson||r.stckKnd||'-'}</span></td>
+            </tr>`).join('')}
+        </table>
+      </div>` : ''}
+
+      <div style="background:rgba(255,211,42,0.07);border:1px solid rgba(255,211,42,0.2);border-radius:8px;padding:14px 18px;font-size:0.8rem;color:var(--yellow);">
+        ⚠️ 의무보호예수 해제일 이후 대량 매도 가능성에 주의하세요. 반환 물량이 클수록 주가 하락 리스크가 있습니다.
+      </div>
+    `;
+  } catch(e) {
+    errorBox('stockContent', `주식 발행 데이터 로드 실패: ${e.message}`);
+  }
+}
+
+/* ─── KRX: 상장종목정보 ─── */
+async function loadKRX(code, name) {
+  loading('krxContent', 'KRX 상장 종목 정보 조회 중...');
+  try {
+    const p = { numOfRows: '20' };
+    if (code) p.srtnCd = code;
+    else if (name) p.itmsNm = name;
+
+    const items = await fetchAPI('/service/GetKrxListedInfoService/getItemInfo', p);
+    collectedData.krx = items;
+
+    if (!items.length) {
+      document.getElementById('krxContent').innerHTML = `<div class="error-box">KRX 상장 정보가 없습니다.</div>`;
+      return;
+    }
+
+    const c = items[0];
+    document.getElementById('krxContent').innerHTML = `
+      <div class="section-title">KRX 상장 종목 정보</div>
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-label">종가</div>
+          <div class="card-value neutral">${fmtNum(c.clpr)}원</div>
+          <div class="card-sub">기준일: ${c.basDt||'-'}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">등락률</div>
+          <div class="card-value ${parseFloat(c.fltRt)>0?'positive':'negative'}">${c.fltRt||'-'}%</div>
+          <div class="card-sub">전일대비 ${fmtNum(c.vs)}원</div>
+        </div>
+        <div class="card">
+          <div class="card-label">거래량</div>
+          <div class="card-value">${fmtNum(c.trqu)}</div>
+          <div class="card-sub">거래대금 ${fmtBillion(c.trPrc)}억</div>
+        </div>
+        <div class="card">
+          <div class="card-label">시가총액</div>
+          <div class="card-value">${fmtBillion(c.mktCap)}</div>
+          <div class="card-sub">억원</div>
+        </div>
+        <div class="card">
+          <div class="card-label">52주 최고</div>
+          <div class="card-value positive">${fmtNum(c.hipr)}원</div>
+          <div class="card-sub">최저: ${fmtNum(c.lopr)}원</div>
+        </div>
+        <div class="card">
+          <div class="card-label">시장구분</div>
+          <div class="card-value" style="font-size:1rem">${c.mrktCtg||c.mktId||'-'}</div>
+          <div class="card-sub">${c.itmsNm||''}</div>
+        </div>
+      </div>
+
+      <div class="data-table-wrap">
+        <div class="table-header">
+          <div class="table-title">전체 결과</div>
+          <div class="table-count">${items.length}개 종목</div>
+        </div>
+        <table>
+          <tr><th>기준일</th><th>종목명</th><th>코드</th><th>종가</th><th>등락률</th><th>시가총액</th><th>시장</th></tr>
+          ${items.slice(0,20).map(r=>{
+            const rt = parseFloat(r.fltRt||0);
+            return `<tr>
+              <td>${r.basDt||'-'}</td>
+              <td style="color:var(--text);font-family:'Noto Sans KR'">${r.itmsNm||'-'}</td>
+              <td><span class="badge badge-neutral">${r.srtnCd||r.isinCd||'-'}</span></td>
+              <td>${fmtNum(r.clpr)}원</td>
+              <td><span class="badge ${rt>0?'badge-up':rt<0?'badge-down':'badge-neutral'}">${r.fltRt||0}%</span></td>
+              <td>${fmtBillion(r.mktCap)}억</td>
+              <td>${r.mrktCtg||r.mktId||'-'}</td>
+            </tr>`;
+          }).join('')}
+        </table>
+      </div>
+    `;
+  } catch(e) {
+    errorBox('krxContent', `KRX 데이터 로드 실패: ${e.message}`);
+  }
+}
+
+/* ─── AI INVESTMENT OPINION ─── */
+async function generateAI() {
+  document.getElementById('aiContent').innerHTML = `
+    <div class="ai-panel">
+      <div class="ai-header">
+        <div class="ai-icon">AI</div>
+        <div class="ai-title">AI 투자 의견 생성 중...</div>
+      </div>
+      <div class="ai-loading">
+        <div class="spinner"></div>
+        수집된 재무 데이터를 분석하고 있습니다...
+      </div>
+    </div>`;
+
+  try {
+    const prompt = buildAIPrompt();
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `당신은 15년 경력의 전업 주식 투자자이자 CFA 자격증 보유자입니다. 
+한국 금융위원회 오픈API에서 수집된 실제 재무 데이터를 분석해 핵심적이고 실용적인 투자 의견을 제시하세요.
+투자 판단(매수/관망/매도)과 근거를 명확히, 전문적으로 설명하세요. 한국어로 답변하세요.`,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    const text = data.content?.map(c=>c.text||'').join('') || '분석 결과를 가져오지 못했습니다.';
+
+    const signal = text.includes('매수') ? 'buy' : text.includes('매도') ? 'sell' : 'hold';
+    const signalLabels = { buy: '매수 의견', sell: '매도 의견', hold: '관망 의견' };
+    const signalClass = { buy: 'signal-buy', sell: 'signal-sell', hold: 'signal-hold' };
+
+    document.getElementById('aiContent').innerHTML = `
+      <div class="ai-panel">
+        <div class="ai-header">
+          <div class="ai-icon">AI</div>
+          <div class="ai-title">AI 투자 분석 리포트</div>
+        </div>
+        <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span class="signal ${signalClass[signal]}">● ${signalLabels[signal]}</span>
+          <span style="font-size:0.72rem;color:var(--muted);">종목: ${collectedData.name||collectedData.code} · ${collectedData.year}년 기준</span>
+        </div>
+        <div class="ai-content">${text}</div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--muted2);padding:12px 4px;">
+        ⚠️ 본 AI 분석은 참고용이며 투자 결정은 본인 책임입니다. 실제 투자 전 추가 분석을 권장합니다.
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('aiContent').innerHTML = `
+      <div class="error-box">AI 분석 오류: ${e.message}</div>
+      <div style="color:var(--muted);font-size:0.8rem;padding:12px;">수동으로 재무 데이터를 확인하세요.</div>`;
+  }
+}
+
+function buildAIPrompt() {
+  const d = collectedData;
+  let prompt = `다음 기업의 재무 데이터를 분석해주세요.\n\n`;
+  prompt += `기업: ${d.name || d.code} | 사업연도: ${d.year}\n\n`;
+
+  if (d.finance?.income?.length) {
+    prompt += `【손익계산서 주요 항목】\n`;
+    d.finance.income.slice(0,8).forEach(r => {
+      prompt += `- ${r.account_nm||r.acnt_nm}: 당기 ${r.thstrm_amount}, 전기 ${r.frmtrm_amount}\n`;
+    });
+  }
+  if (d.finance?.balance?.length) {
+    prompt += `\n【재무상태표 주요 항목】\n`;
+    d.finance.balance.slice(0,6).forEach(r => {
+      prompt += `- ${r.account_nm||r.acnt_nm}: ${r.thstrm_amount}\n`;
+    });
+  }
+  if (d.krx?.length) {
+    const k = d.krx[0];
+    prompt += `\n【시장 데이터】\n`;
+    prompt += `- 종가: ${k.clpr}원, 등락률: ${k.fltRt}%, 시가총액: ${k.mktCap}원\n`;
+    prompt += `- 52주 최고: ${k.hipr}원, 최저: ${k.lopr}원\n`;
+  }
+  if (d.stock?.mandatory?.length) {
+    prompt += `\n【의무보호예수 반환】${d.stock.mandatory.length}건 예정\n`;
+  }
+
+  prompt += `\n위 데이터를 바탕으로:\n1. 수익성 분석 (매출 성장률, 영업이익률, ROE)\n2. 재무 안정성 (부채비율, 유동성)\n3. 밸류에이션 판단\n4. 주요 리스크\n5. 최종 투자 의견 (매수/관망/매도)과 목표가 방향성\n을 전문적으로 분석해주세요.`;
+  return prompt;
+}
+
+/* ─── HELPERS ─── */
+function fmtNum(v) {
+  if (!v) return '-';
+  const n = parseInt(String(v).replace(/,/g,''));
+  if (isNaN(n)) return v;
+  return n.toLocaleString('ko-KR');
+}
+
+function fmtBillion(v) {
+  if (!v) return '-';
+  const n = parseInt(String(v).replace(/,/g,''));
+  if (isNaN(n)) return v;
+  if (Math.abs(n) >= 100000000) return (n/100000000).toFixed(0) + '억';
+  if (Math.abs(n) >= 10000) return (n/10000).toFixed(0) + '만';
+  return n.toLocaleString('ko-KR');
+}
+
+function parseNum(v) {
+  if (!v) return 0;
+  return parseInt(String(v).replace(/,/g,'')) || 0;
+}
+
+function findVal(arr, key, nameHint) {
+  if (!arr) return null;
+  const found = arr.find(r => (r.account_nm||r.acnt_nm||'').includes(nameHint));
+  return found ? found[key] : null;
+}
+</script>
+</body>
+</html>
