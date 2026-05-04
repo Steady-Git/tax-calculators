@@ -881,7 +881,9 @@ const sidebar  = document.getElementById('sidebar');
 const overlay  = document.getElementById('mob-overlay');
 const mobBtn   = document.getElementById('mobMenuBtn');
 
-if (mobBtn)  mobBtn.addEventListener('click', openSidebar);
+if (mobBtn)  mobBtn.addEventListener('click', () => {
+  sidebar.classList.contains('is-open') ? closeSidebar() : openSidebar();
+});
 if (overlay) overlay.addEventListener('click', closeSidebar);
 
 function openSidebar() {
