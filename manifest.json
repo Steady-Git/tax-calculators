@@ -1,7 +1,7 @@
 {
   "name": "세금계산기.zip",
-  "short_name": "세금계산기",
-  "description": "부동산세금, 증여세, 급여계산 등 다양한 세금 계산기 모음 (2026년 기준)",
+  "short_name": "세금계산기.zip",
+  "description": "부동산세금, 증여세, 급여계산 등 다양한 세금 계산기 모음",
   "start_url": "/index.html",
   "display": "standalone",
   "orientation": "portrait-primary",
