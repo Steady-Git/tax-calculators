@@ -68,11 +68,11 @@
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
+html, body {
+  height: 100%;
   font-family: 'Noto Sans KR', sans-serif;
   background: var(--bg);
   color: var(--ink);
-  min-height: 100vh;
   overflow-x: hidden;
 }
 body::before {
@@ -84,12 +84,66 @@ body::before {
   pointer-events: none; z-index: 0;
 }
 
+/* ════ APP SHELL ════ */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative; z-index: 1;
+}
+
+/* ── 상단바 (모바일 전용) ── */
+.topbar {
+  display: none;
+  flex-shrink: 0;
+  height: 52px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  gap: 12px;
+  padding: 0 1.25rem;
+  z-index: 10;
+}
+.topbar-hamburger {
+  background: none; border: none; cursor: pointer;
+  color: var(--ink); padding: 4px;
+  display: flex; align-items: center; justify-content: center;
+}
+.topbar-logo {
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 900; font-size: 18px; color: var(--ink);
+  display: flex; align-items: baseline; gap: 1px;
+}
+.topbar-logo .tl-zip {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px; color: var(--ink-dim);
+}
+
+/* ── 페이지 바디 ── */
+.page-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
 /* ════ LAYOUT ════ */
 .layout {
-  position: relative; z-index: 1;
   display: flex;
-  min-height: 100vh;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
 }
+
+/* 모바일 오버레이 */
+#mob-overlay {
+  display: none;
+  position: absolute; inset: 0;
+  background: rgba(26,24,20,0.45);
+  z-index: 100;
+}
+#mob-overlay.show { display: block; }
 
 /* ── 사이드바 ── */
 .sidebar {
@@ -103,6 +157,16 @@ body::before {
   top: 0;
   height: 100vh;
   overflow-y: auto;
+}
+
+/* 메인 영역 */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-y: auto;
+  height: 100%;
 }
 
 .logo-area {
@@ -432,8 +496,27 @@ nav { padding: 0.5rem 0; flex: 1; }
 
 /* ── 반응형 ── */
 @media (max-width: 680px) {
-  .layout { flex-direction: column; }
-  .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid var(--border); }
+  /* 상단바 표시 */
+  .topbar { display: flex; }
+
+  /* page-body가 실제 뷰포트를 채우도록 */
+  .page-body { overflow: hidden; }
+
+  /* 사이드바: 왼쪽에서 슬라이드 */
+  .sidebar {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 285px;
+    height: 100%;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    z-index: 200;
+  }
+  .sidebar.is-open { transform: translateX(0); }
+
+  /* 메인 영역 스크롤 */
+  .layout { overflow-y: auto; }
+
   .calc-view { position: relative; height: auto; min-height: 90vh; }
   .calc-iframe-wrap iframe { min-height: 85vh; }
   .home-view { padding: 1.5rem 1.25rem 3rem; }
@@ -450,11 +533,27 @@ nav { padding: 0.5rem 0; flex: 1; }
 <link rel="apple-touch-icon" href="/icons/icon-192.png">     
 </head>
 <body>
-<div class="layout">
+<div class="app-shell">
+
+  <!-- 상단바 (모바일만 표시) -->
+  <div class="topbar">
+    <button class="topbar-hamburger" id="mobMenuBtn" aria-label="메뉴 열기">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <line x1="3" y1="6"  x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <div class="topbar-logo">세금계산기<span class="tl-zip">.zip</span></div>
+  </div>
+
+  <!-- 페이지 바디 -->
+  <div class="page-body">
+    <div class="layout">
 
   <!-- ══ 사이드바 ══ -->
-  <aside class="sidebar">
-    <div class="logo-area" onclick="closeCalc()">
+  <aside class="sidebar" id="sidebar">
+    <div class="logo-area" onclick="closeCalc(); closeSidebar()">
       <div class="logo-eyebrow">Tax Calculator Suite</div>
       <div class="logo-title">
         <span class="logo-big">세</span><span class="logo-big">금</span><span class="logo-big">계</span><span class="logo-big">산기</span><span class="logo-zip">.zip</span>
@@ -765,10 +864,34 @@ nav { padding: 0.5rem 0; flex: 1; }
     </div>
 
   </main>
-</div>
+
+  </div><!-- /layout -->
+
+  <!-- 모바일 오버레이 -->
+  <div id="mob-overlay"></div>
+
+  </div><!-- /page-body -->
+</div><!-- /app-shell -->
 
 <script>
 let activeNavItem = null;
+
+/* ── 모바일 사이드바 ── */
+const sidebar  = document.getElementById('sidebar');
+const overlay  = document.getElementById('mob-overlay');
+const mobBtn   = document.getElementById('mobMenuBtn');
+
+if (mobBtn)  mobBtn.addEventListener('click', openSidebar);
+if (overlay) overlay.addEventListener('click', closeSidebar);
+
+function openSidebar() {
+  sidebar.classList.add('is-open');
+  overlay.classList.add('show');
+}
+function closeSidebar() {
+  sidebar.classList.remove('is-open');
+  overlay.classList.remove('show');
+}
 
 function toggleSection(btn) {
   const items = btn.nextElementSibling;
@@ -794,6 +917,7 @@ function openCalc(file, title, navItemEl) {
   document.getElementById('calcNewTab').href = file;
   document.getElementById('homeView').classList.add('hidden');
   document.getElementById('calcView').classList.add('open');
+  closeSidebar();
   window.scrollTo({ top: 0 });
 }
 
