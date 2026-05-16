@@ -1138,7 +1138,13 @@ document.getElementById('bizModal').addEventListener('click',e=>{ if(e.target===
 // ═══════════════════════════════════════════
 // 11. 초기화
 // ═══════════════════════════════════════════
-function init(){ addItem(); loadData(); }
+function init(){
+  // PC: 기본 4개 / 모바일: 기본 1개로 시작
+  const isMobile = window.matchMedia('(max-width: 540px)').matches;
+  const initialCount = isMobile ? 1 : 4;
+  for(let i=0; i<initialCount; i++) addItem();
+  loadData();
+}
 
 // 화면 크기 변경(회전 등) 시 테이블 재렌더링
 let resizeTimer;
