@@ -170,6 +170,26 @@ main{padding:20px 16px 80px}
 .deficit-title{font-size:12px;font-weight:600;color:var(--danger);display:flex;align-items:center;gap:4px}
 .deficit-detail{font-size:11px;color:var(--t3);margin-top:4px;line-height:1.7;font-family:'IBM Plex Mono',monospace}
 .tr-val.negative{color:var(--danger)}
+/* 이월결손금 카드 */
+.carryover-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.carryover-hd{padding:12px 18px;background:#fef3f2;border-bottom:1px solid #fecaca;display:flex;align-items:center;gap:8px}
+.carryover-hd-title{font-size:14px;font-weight:700;color:#991b1b}
+.carryover-hd-desc{font-size:11px;color:#b91c1c;margin-left:4px}
+.carryover-body{padding:14px 18px;display:flex;flex-direction:column;gap:10px}
+.carryover-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.carryover-row{grid-template-columns:1fr}}
+.carryover-field{display:flex;flex-direction:column;gap:5px}
+.carryover-label{font-size:12px;font-weight:600;color:var(--t2);display:flex;align-items:center;gap:5px}
+.carryover-label .dot{width:8px;height:8px;border-radius:50%;background:var(--c-gen);display:inline-block;flex-shrink:0;animation:none}
+.carryover-label .dot.re{background:var(--c-re)}
+.carryover-input-wrap{position:relative}
+.carryover-inp{width:100%;font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right;border:1px solid var(--border2);border-radius:var(--rsm);padding:7px 10px;outline:none;background:#fff;color:var(--text);transition:border-color .15s}
+.carryover-inp:focus{border-color:var(--danger);box-shadow:0 0 0 3px rgba(220,38,38,.1)}
+.carryover-inp::placeholder{color:var(--t3);font-family:'Noto Sans KR',sans-serif;font-size:11px}
+/* 이월결손금 공제 내역 행 */
+.total-row.carryover-deduct{background:#fff7ed;border-radius:var(--rsm);border:1px solid #fed7aa;border-bottom:1px solid #fed7aa;padding:8px 12px;margin:4px 0;align-items:flex-start;display:none}
+.carryover-deduct-title{font-size:12px;font-weight:600;color:#92400e;display:flex;align-items:center;gap:4px}
+.carryover-deduct-detail{font-size:11px;color:var(--t3);margin-top:4px;line-height:1.7;font-family:'IBM Plex Mono',monospace}
 
 /* Modal */
 .modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;padding:20px}
@@ -224,6 +244,36 @@ main{padding:20px 16px 80px}
     </div>
   </div>
 
+  <!-- ── 이월결손금 입력 카드 ── -->
+  <div class="carryover-card">
+    <div class="carryover-hd">
+      <span class="carryover-hd-title">📂 이월결손금</span>
+      <span class="carryover-hd-desc">당해연도 이전 발생 결손금 입력 (해당 없으면 0)</span>
+    </div>
+    <div class="carryover-body">
+      <div class="carryover-row">
+        <div class="carryover-field">
+          <span class="carryover-label">
+            <span class="dot"></span>일반사업 이월결손금
+          </span>
+          <div class="carryover-input-wrap">
+            <input type="text" inputmode="numeric" class="carryover-inp" id="coGen"
+              placeholder="0" oninput="onCarryoverInput(this)" onblur="onCarryoverBlur(this)">
+          </div>
+        </div>
+        <div class="carryover-field">
+          <span class="carryover-label">
+            <span class="dot re"></span>부동산임대 이월결손금
+          </span>
+          <div class="carryover-input-wrap">
+            <input type="text" inputmode="numeric" class="carryover-inp" id="coRe"
+              placeholder="0" oninput="onCarryoverInput(this)" onblur="onCarryoverBlur(this)">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="total-card">
     <h2>🧮 종합소득금액 합산</h2>
     <div class="total-row">
@@ -246,13 +296,29 @@ main{padding:20px 16px 80px}
       <span class="tr-label"><span class="tr-dot" style="background:var(--c-other)"></span>기타 소득금액</span>
       <span class="tr-val" id="sumOther">0</span>
     </div>
-    <!-- 일반사업 결손공제 내역 (결손 발생 시에만 표시) -->
+    <!-- 당해연도 일반사업 결손공제 내역 -->
     <div class="total-row deficit" id="deficitRow">
       <div style="flex:1">
         <div class="deficit-title">⚠ 일반사업 결손금 타소득 공제</div>
         <div class="deficit-detail" id="deficitDetail"></div>
       </div>
       <span class="tr-val negative" id="sumDeficit"></span>
+    </div>
+    <!-- 이월결손금 공제 내역 (일반사업) -->
+    <div class="total-row carryover-deduct" id="coGenRow">
+      <div style="flex:1">
+        <div class="carryover-deduct-title">📂 일반사업 이월결손금 공제</div>
+        <div class="carryover-deduct-detail" id="coGenDetail"></div>
+      </div>
+      <span class="tr-val" style="color:#92400e" id="coGenDeducted"></span>
+    </div>
+    <!-- 이월결손금 공제 내역 (부동산임대) -->
+    <div class="total-row carryover-deduct" id="coReRow">
+      <div style="flex:1">
+        <div class="carryover-deduct-title">📂 부동산임대 이월결손금 공제</div>
+        <div class="carryover-deduct-detail" id="coReDetail"></div>
+      </div>
+      <span class="tr-val" style="color:#92400e" id="coReDeducted"></span>
     </div>
     <div class="total-row grand">
       <span class="tr-label">종합소득금액 합계</span>
@@ -822,68 +888,100 @@ function updateItemDOM(idx){
 
 function calculateAll(){ items.forEach((_,i)=>computeItem(i)); updateTotals(); }
 
+// ── 이월결손금 입력 핸들러 ──────────────────────
+function onCarryoverInput(el){
+  const raw=el.value.replace(/,/g,'').replace(/\D/g,'');
+  const num=parseFloat(raw)||0;
+  const pos=el.selectionStart;
+  const prevLen=el.value.length;
+  el.value=num?fmt(num):'';
+  const diff=el.value.length-prevLen;
+  const newPos=Math.max(0,pos+diff);
+  el.setSelectionRange(newPos,newPos);
+  updateTotals();
+}
+function onCarryoverBlur(el){
+  const num=parseFloat(el.value.replace(/,/g,''))||0;
+  el.value=num?fmt(num):'';
+}
+function getCarryover(id){ return parseFloat(document.getElementById(id).value.replace(/,/g,''))||0; }
+
+// ── 결손공제 헬퍼: remaining을 순서대로 각 소득에서 공제 ──
+function applyDeficit(remaining, buckets, details, label){
+  // buckets: [{key, name, val}], 순서대로 공제
+  let total=0;
+  for(const b of buckets){
+    if(b.val>0 && remaining>0){
+      const d=Math.min(b.val,remaining);
+      details.push(`${b.name}: ${fmt(b.val)} - ${fmt(d)} = ${fmt(b.val-d)}`);
+      b.val-=d; remaining-=d; total+=d;
+    }
+  }
+  return { remaining, totalDeducted: total };
+}
+
 function updateTotals(){
   // 1. 소득종류별 합산
   const s={general:0,realEstate:0,wage:0,pension:0,other:0};
   items.forEach(item=>{ s[item.sodkType]=(s[item.sodkType]||0)+item.income; });
 
   const f=n=>fmt(Math.round(Math.abs(n)));
-  const fs=n=>n<0?'△'+f(n):f(n); // 결손 표시용 (△ 기호)
+  const fs=n=>n<0?'△'+f(n):f(n);
 
-  // 2. 개별 소득금액 표시 (원래값 그대로, 음수면 △)
+  // 2. 개별 소득금액 표시
   document.getElementById('sumGen').textContent     =fs(s.general);
   document.getElementById('sumRe').textContent      =fs(s.realEstate);
   document.getElementById('sumWage').textContent    =fs(s.wage);
   document.getElementById('sumPension').textContent =fs(s.pension);
   document.getElementById('sumOther').textContent   =fs(s.other);
-  // 음수(결손)인 경우 빨간색
   ['sumGen','sumRe','sumWage','sumPension','sumOther'].forEach(id=>{
     const el=document.getElementById(id);
-    el.classList.toggle('negative', parseFloat(el.textContent.replace(/[^0-9.-]/g,''))<0||el.textContent.startsWith('△'));
+    el.classList.toggle('negative', el.textContent.startsWith('△'));
   });
 
-  // 3. 결손 처리 규칙 적용
-  // ① 부동산임대 결손 → 다른 소득 공제 불가 → 0으로 처리(손실 소멸)
-  const reForSum = Math.max(0, s.realEstate);
+  // 3. 부동산임대 결손 → 타소득 공제 불가 → 0 처리
+  const reForSum=Math.max(0, s.realEstate);
 
-  // ② 일반사업 결손 → 부동산임대 → 근로 → 연금 → 기타 순으로 공제
-  let reAdj=reForSum, wageAdj=s.wage, penAdj=s.pension, othAdj=s.other;
-  let totalDeducted=0;
-  const details=[];
+  // ── 조정 가능한 버킷 (결손/이월 공제에 사용)
+  let buckets={
+    re:    reForSum,
+    wage:  s.wage,
+    pen:   s.pension,
+    other: s.other,
+    gen:   Math.max(0, s.general),
+  };
 
+  // 4. 당해연도 일반사업 결손 공제 (부동산임대→근로→연금→기타 순)
+  let defDetails=[]; let defTotal=0;
   if(s.general < 0){
-    let deficit = -s.general; // 공제해야 할 금액 (양수)
-
-    if(reAdj>0 && deficit>0){
-      const d=Math.min(reAdj,deficit);
-      details.push(`부동산임대: ${f(reAdj)} - ${f(d)} = ${f(reAdj-d)}`);
-      reAdj-=d; deficit-=d; totalDeducted+=d;
+    const bkts=[
+      {name:'부동산임대', val:buckets.re},
+      {name:'근로소득',   val:buckets.wage},
+      {name:'연금소득',   val:buckets.pen},
+      {name:'기타소득',   val:buckets.other},
+    ];
+    let rem=-s.general;
+    for(const b of bkts){
+      if(b.val>0 && rem>0){
+        const d=Math.min(b.val,rem);
+        defDetails.push(`${b.name}: ${f(b.val)} - ${f(d)} = ${f(b.val-d)}`);
+        defTotal+=d; rem-=d;
+        if(b.name==='부동산임대') buckets.re=b.val-d;
+        else if(b.name==='근로소득')  buckets.wage=b.val-d;
+        else if(b.name==='연금소득')  buckets.pen=b.val-d;
+        else if(b.name==='기타소득')  buckets.other=b.val-d;
+      }
     }
-    if(wageAdj>0 && deficit>0){
-      const d=Math.min(wageAdj,deficit);
-      details.push(`근로소득: ${f(wageAdj)} - ${f(d)} = ${f(wageAdj-d)}`);
-      wageAdj-=d; deficit-=d; totalDeducted+=d;
-    }
-    if(penAdj>0 && deficit>0){
-      const d=Math.min(penAdj,deficit);
-      details.push(`연금소득: ${f(penAdj)} - ${f(d)} = ${f(penAdj-d)}`);
-      penAdj-=d; deficit-=d; totalDeducted+=d;
-    }
-    if(othAdj>0 && deficit>0){
-      const d=Math.min(othAdj,deficit);
-      details.push(`기타소득: ${f(othAdj)} - ${f(d)} = ${f(othAdj-d)}`);
-      othAdj-=d; deficit-=d; totalDeducted+=d;
-    }
+    buckets.gen=0; // 결손이므로 일반사업은 0
   }
 
-  // 4. 결손공제 행 표시/숨김
+  // 당해연도 결손공제 표시
   const defRow=document.getElementById('deficitRow');
-  if(s.general<0 && totalDeducted>0){
+  if(s.general<0 && defTotal>0){
     defRow.style.display='flex';
-    document.getElementById('sumDeficit').textContent='△'+f(totalDeducted);
-    document.getElementById('deficitDetail').innerHTML=details.join('<br>');
-  } else if(s.general<0 && totalDeducted===0){
-    // 결손이지만 공제할 타소득 없음
+    document.getElementById('sumDeficit').textContent='△'+f(defTotal);
+    document.getElementById('deficitDetail').innerHTML=defDetails.join('<br>');
+  } else if(s.general<0 && defTotal===0){
     defRow.style.display='flex';
     document.getElementById('sumDeficit').textContent='-';
     document.getElementById('deficitDetail').innerHTML='공제 가능한 타 소득 없음';
@@ -891,10 +989,66 @@ function updateTotals(){
     defRow.style.display='none';
   }
 
-  // 5. 최종 종합소득금액
-  // 일반사업은 결손 시 0 (음수로 합산 방지), 부동산임대는 reAdj(결손 제거 + 공제 반영)
-  const genForSum = Math.max(0, s.general);
-  const total = genForSum + reAdj + wageAdj + penAdj + othAdj;
+  // 5. 이월결손금 공제
+  const coGenAmt = getCarryover('coGen'); // 일반사업 이월결손금
+  const coReAmt  = getCarryover('coRe');  // 부동산임대 이월결손금
+
+  // ① 일반사업 이월결손금: 일반사업→부동산임대→근로→연금→기타 순
+  let coGenDetails=[]; let coGenTotal=0;
+  if(coGenAmt>0){
+    const bkts=[
+      {name:'일반사업',   val:buckets.gen},
+      {name:'부동산임대', val:buckets.re},
+      {name:'근로소득',   val:buckets.wage},
+      {name:'연금소득',   val:buckets.pen},
+      {name:'기타소득',   val:buckets.other},
+    ];
+    let rem=coGenAmt;
+    for(const b of bkts){
+      if(b.val>0 && rem>0){
+        const d=Math.min(b.val,rem);
+        coGenDetails.push(`${b.name}: ${f(b.val)} - ${f(d)} = ${f(b.val-d)}`);
+        coGenTotal+=d; rem-=d;
+        if(b.name==='일반사업')   buckets.gen=b.val-d;
+        else if(b.name==='부동산임대') buckets.re=b.val-d;
+        else if(b.name==='근로소득')   buckets.wage=b.val-d;
+        else if(b.name==='연금소득')   buckets.pen=b.val-d;
+        else if(b.name==='기타소득')   buckets.other=b.val-d;
+      }
+    }
+    if(rem>0) coGenDetails.push(`(잔여 이월결손금 ${f(rem)} 차기 이월)`);
+  }
+
+  // ② 부동산임대 이월결손금: 부동산임대 소득금액에서만 차감
+  let coReDetails=[]; let coReTotal=0;
+  if(coReAmt>0){
+    if(buckets.re>0){
+      const d=Math.min(buckets.re, coReAmt);
+      coReDetails.push(`부동산임대: ${f(buckets.re)} - ${f(d)} = ${f(buckets.re-d)}`);
+      coReTotal+=d; buckets.re-=d;
+      if(coReAmt-d>0) coReDetails.push(`(잔여 이월결손금 ${f(coReAmt-d)} 차기 이월)`);
+    } else {
+      coReDetails.push('공제 가능한 부동산임대 소득 없음 → 차기 이월');
+    }
+  }
+
+  // 이월결손금 공제 행 표시/숨김
+  const coGenRow=document.getElementById('coGenRow');
+  if(coGenAmt>0){
+    coGenRow.style.display='flex';
+    document.getElementById('coGenDeducted').textContent=coGenTotal>0?'△'+f(coGenTotal):'-';
+    document.getElementById('coGenDetail').innerHTML=coGenDetails.join('<br>');
+  } else { coGenRow.style.display='none'; }
+
+  const coReRow=document.getElementById('coReRow');
+  if(coReAmt>0){
+    coReRow.style.display='flex';
+    document.getElementById('coReDeducted').textContent=coReTotal>0?'△'+f(coReTotal):'-';
+    document.getElementById('coReDetail').innerHTML=coReDetails.join('<br>');
+  } else { coReRow.style.display='none'; }
+
+  // 6. 최종 종합소득금액
+  const total=buckets.gen+buckets.re+buckets.wage+buckets.pen+buckets.other;
   document.getElementById('sumTotal').textContent=fmt(Math.round(Math.max(0,total)));
 }
 
