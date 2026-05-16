@@ -144,10 +144,10 @@ main{padding:24px 20px 80px;max-width:900px;margin:0 auto}
 .rate-v.over{color:var(--warn)}
 .rate-none{font-size:11px;color:var(--t3);padding:0 10px}
 
-/* 숫자 입력 (contenteditable) */
-.num-inp{display:block;width:100%;height:100%;padding:0 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right;color:var(--text);outline:none;background:transparent;cursor:text;line-height:var(--rh);white-space:nowrap;overflow:hidden;caret-color:var(--primary)}
+/* 숫자 입력 (input) */
+.num-inp{display:block;width:100%;height:100%;padding:0 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right;color:var(--text);outline:none;background:transparent;border:none;cursor:text;caret-color:var(--primary);-webkit-appearance:none;appearance:none}
 .num-inp:focus{background:rgba(26,79,196,.04);box-shadow:inset 0 0 0 2px var(--primary)}
-.num-inp:empty::before{content:attr(data-ph);color:var(--t3);font-family:'Noto Sans KR',sans-serif;font-size:11px}
+.num-inp::placeholder{color:var(--t3);font-family:'Noto Sans KR',sans-serif;font-size:11px}
 
 /* 결과값 */
 .res-val{display:block;width:100%;height:100%;padding:0 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;text-align:right;color:var(--primary);line-height:var(--rh);white-space:nowrap}
@@ -379,55 +379,46 @@ let items = [];
 // ═══════════════════════════════════════════
 const fmt = n => (!n || isNaN(n)) ? '0' : Math.round(n).toLocaleString('ko-KR');
 function getRaw(el) { return parseFloat((el.textContent||'').replace(/,/g,''))||0; }
-function moveCE(el) { const r=document.createRange(),s=window.getSelection(); r.selectNodeContents(el); r.collapse(false); s.removeAllRanges(); s.addRange(r); }
 
-function onNumKeydown(e) {
-  const ok=['Backspace','Delete','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Tab','Enter','Home','End'];
-  if(ok.includes(e.key)||e.ctrlKey||e.metaKey) return;
-  if(!/^\d$/.test(e.key)) e.preventDefault();
+function getRaw(el){
+  return parseFloat((el.value||'').replace(/,/g,''))||0;
 }
 
 function onNumInput(el, idx, field) {
-  let dBefore=0;
-  const sel=window.getSelection();
-  if(sel.rangeCount){
-    const r=sel.getRangeAt(0).cloneRange();
-    r.selectNodeContents(el);
-    r.setEnd(sel.getRangeAt(0).endContainer,sel.getRangeAt(0).endOffset);
-    dBefore=r.toString().replace(/,/g,'').length;
-  }
-  const raw=el.textContent.replace(/,/g,'').replace(/\D/g,'');
-  const num=parseFloat(raw)||0;
-  const formatted=num?fmt(num):'';
-  el.textContent=formatted;
-  if(formatted&&el.firstChild){
-    let dc=0,off=0;
-    for(let i=0;i<formatted.length;i++){
-      if(formatted[i]!==',') dc++;
-      off=i+1;
-      if(dc>=dBefore) break;
-    }
-    try{
-      const r2=document.createRange(),s2=window.getSelection();
-      r2.setStart(el.firstChild,Math.min(off,formatted.length));
-      r2.collapse(true);s2.removeAllRanges();s2.addRange(r2);
-    }catch(_){}
-  }
+  const pos = el.selectionStart;
+  const prevLen = el.value.length;
+  const raw = el.value.replace(/,/g,'').replace(/\D/g,'');
+  const num = parseFloat(raw)||0;
+  const formatted = num ? fmt(num) : '';
+  el.value = formatted;
+  // 커서 위치 보정 (쉼표 개수 변화만큼)
+  const diff = formatted.length - prevLen;
+  const newPos = Math.max(0, pos + diff);
+  try { el.setSelectionRange(newPos, newPos); } catch(_){}
   if(field==='revenue') items[idx].revenue=num;
   else                  items[idx].expenseBook=num;
   computeItem(idx); updateTotals();
 }
 
-function onNumBlur(el){ const n=getRaw(el); el.textContent=n?fmt(n):''; }
+function onNumBlur(el){
+  const n = getRaw(el);
+  el.value = n ? fmt(n) : '';
+}
 
-function handlePaste(e,el,idx,field){
+function onNumFocus(el){
+  // 포커스 시 커서를 끝으로
+  const len = el.value.length;
+  try { el.setSelectionRange(len, len); } catch(_){}
+}
+
+function handlePaste(e, el, idx, field){
   e.preventDefault();
   const txt=(e.clipboardData||window.clipboardData).getData('text');
   const num=parseFloat(txt.replace(/,/g,''))||0;
-  el.textContent=num?fmt(num):'';
+  el.value=num?fmt(num):'';
   if(field==='revenue') items[idx].revenue=num;
   else items[idx].expenseBook=num;
-  moveCE(el); computeItem(idx); updateTotals();
+  computeItem(idx); updateTotals();
 }
 
 // ═══════════════════════════════════════════
@@ -628,14 +619,14 @@ function renderTable(){
   // 기존 입력값 복원
   items.forEach((item,i)=>{
     const re=document.getElementById(`rev_${i}`);
-    if(re&&item.revenue) re.textContent=fmt(item.revenue);
+    if(re&&item.revenue) re.value=fmt(item.revenue);
     if(isBiz(item.sodkType)&&item.reportType==='book'){
       const ex=document.getElementById(`exp_${i}`);
-      if(ex&&item.expenseBook) ex.textContent=fmt(item.expenseBook);
+      if(ex&&item.expenseBook) ex.value=fmt(item.expenseBook);
     }
     if(item.sodkType==='other'){
       const ex=document.getElementById(`exp_${i}`);
-      if(ex&&item.expenseBook) ex.textContent=fmt(item.expenseBook);
+      if(ex&&item.expenseBook) ex.value=fmt(item.expenseBook);
     }
     updateItemDOM(i);
   });
@@ -725,11 +716,12 @@ function buildRows(){
       dcCls:()=>'',
       render:(item,i)=>{
         const ph=item.sodkType==='wage'?'총급여액':item.sodkType==='pension'?'총연금액':'0';
-        return `<div contenteditable="true" class="num-inp" id="rev_${i}" data-ph="${ph}"
-          onkeydown="onNumKeydown(event)"
+        return `<input type="text" inputmode="numeric" class="num-inp" id="rev_${i}"
+          placeholder="${ph}"
           oninput="onNumInput(this,${i},'revenue')"
           onblur="onNumBlur(this)"
-          onpaste="handlePaste(event,this,${i},'revenue')"></div>`;
+          onfocus="onNumFocus(this)"
+          onpaste="handlePaste(event,this,${i},'revenue')">`;
       },
     },
     // 필요경비 / 소득공제금액 (소득종류에 따라 라벨·내용 다름)
@@ -747,11 +739,12 @@ function buildRows(){
         }
         // 기타소득 or 기장 사업소득: 직접 입력
         if(item.sodkType==='other'||item.reportType==='book'){
-          return `<div contenteditable="true" class="num-inp" id="exp_${i}" data-ph="직접 입력"
-            onkeydown="onNumKeydown(event)"
+          return `<input type="text" inputmode="numeric" class="num-inp" id="exp_${i}"
+            placeholder="직접 입력"
             oninput="onNumInput(this,${i},'expense')"
             onblur="onNumBlur(this)"
-            onpaste="handlePaste(event,this,${i},'expense')"></div>`;
+            onfocus="onNumFocus(this)"
+            onpaste="handlePaste(event,this,${i},'expense')">`;
         }
         return `<span class="res-val" id="exp_${i}" style="color:var(--t2);font-weight:500">—</span>`;
       },
@@ -787,10 +780,10 @@ function setProp(idx,prop,val){
   renderTable();
   items.forEach((item,i)=>{
     const re=document.getElementById(`rev_${i}`);
-    if(re&&item.revenue) re.textContent=fmt(item.revenue);
+    if(re&&item.revenue) re.value=fmt(item.revenue);
     if(isBiz(item.sodkType)&&item.reportType==='book'){
       const ex=document.getElementById(`exp_${i}`);
-      if(ex&&item.expenseBook) ex.textContent=fmt(item.expenseBook);
+      if(ex&&item.expenseBook) ex.value=fmt(item.expenseBook);
     }
     computeItem(i);
   });
@@ -901,7 +894,7 @@ function updateItemDOM(idx){
       // 사업소득 자동계산
       expEl.textContent=(item.businessCode&&item.revenue)?fmt(Math.round(item.expense)):'—';
     }
-    // 기타소득·기장은 contenteditable이므로 별도 처리 불필요
+    // 기타소득·기장은 input이므로 사용자 입력값 유지 (별도 처리 불필요)
   }
   const dtlEl=document.getElementById(`dtl_${idx}`);
   if(dtlEl) dtlEl.textContent=item.detail||'';
@@ -1116,14 +1109,14 @@ function selectBiz(code){
   renderTable();
   items.forEach((item,i)=>{
     const re=document.getElementById(`rev_${i}`);
-    if(re&&item.revenue) re.textContent=fmt(item.revenue);
+    if(re&&item.revenue) re.value=fmt(item.revenue);
     if(isBiz(item.sodkType)&&item.reportType==='book'){
       const ex=document.getElementById(`exp_${i}`);
-      if(ex&&item.expenseBook) ex.textContent=fmt(item.expenseBook);
+      if(ex&&item.expenseBook) ex.value=fmt(item.expenseBook);
     }
     if(item.sodkType==='other'){
       const ex=document.getElementById(`exp_${i}`);
-      if(ex&&item.expenseBook) ex.textContent=fmt(item.expenseBook);
+      if(ex&&item.expenseBook) ex.value=fmt(item.expenseBook);
     }
     computeItem(i);
   });
