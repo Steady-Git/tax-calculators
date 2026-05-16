@@ -582,18 +582,20 @@ function renderTable(){
   if(items.length===0){ tbl.innerHTML=''; updateTotals(); return; }
 
   const n=items.length;
-  // 4개 이하: 테이블이 컨테이너 너비를 100% 채움, 컬럼은 비율로
-  // 5개 이상: 고정 너비 컬럼 + 가로 스크롤
-  const fillMode = n <= 4;
+  // 모바일(<=540px): 항상 고정폭 컬럼 (1개여도 좁게, 가로 스크롤)
+  // PC: 4개 이하면 컨테이너 4분할 폭으로 고정 / 5개 이상이면 고정폭 + 가로 스크롤
+  const isMobile = window.matchMedia('(max-width: 540px)').matches;
+  const fillMode = !isMobile && n <= 4;
   tbl.className = `main-tbl ${fillMode ? 'fill' : 'scroll'}`;
 
   // colgroup
   let cg=`<colgroup><col style="width:var(--lw);min-width:var(--lw)">`;
   if(fillMode){
-    // 4개 이하: 데이터 컬럼은 남은 너비를 균등 분할
-    items.forEach(()=>{ cg+=`<col>`; });
+    // PC 4개 이하: 각 컬럼은 (전체너비 - 라벨너비)/4 로 고정
+    // → 1개여도 4칸 폭 유지, 5개 추가시 scroll 모드로 전환
+    items.forEach(()=>{ cg+=`<col style="width:calc((100% - var(--lw)) / 4)">`; });
   } else {
-    // 5개 이상: 고정 너비 (가로 스크롤)
+    // 모바일 또는 PC 5개 이상: 고정 너비 (가로 스크롤)
     items.forEach(()=>{ cg+=`<col style="width:var(--cw);min-width:var(--cw)">`; });
   }
   cg+='</colgroup>';
@@ -1137,6 +1139,13 @@ document.getElementById('bizModal').addEventListener('click',e=>{ if(e.target===
 // 11. 초기화
 // ═══════════════════════════════════════════
 function init(){ addItem(); loadData(); }
+
+// 화면 크기 변경(회전 등) 시 테이블 재렌더링
+let resizeTimer;
+window.addEventListener('resize', ()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(()=>{ if(items.length>0) renderTable(); }, 200);
+});
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
 </script>
 </body>
