@@ -70,7 +70,11 @@ main{padding:24px 20px 80px;max-width:900px;margin:0 auto}
 
 /* Table */
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--rsm);border:1px solid var(--border)}
-.main-tbl{border-collapse:collapse;width:max-content;table-layout:fixed}
+.main-tbl{border-collapse:collapse;table-layout:fixed}
+/* 4개 이하 - 컨테이너 100% 채움 */
+.main-tbl.fill{width:100%}
+/* 5개 이상 - 컨텐츠 크기, 가로 스크롤 */
+.main-tbl.scroll{width:max-content}
 
 /* 라벨 셀 */
 .main-tbl .lc{width:var(--lw);min-width:var(--lw);padding:6px 8px;font-size:11.5px;color:var(--t2);font-weight:600;background:var(--surface2);border-right:2px solid var(--border2);border-bottom:1px solid var(--border);vertical-align:middle;text-align:center;word-break:keep-all;height:var(--rh)}
@@ -79,7 +83,8 @@ main{padding:24px 20px 80px;max-width:900px;margin:0 auto}
 .lc .req{color:var(--accent)}
 
 /* 데이터 셀 */
-.main-tbl .dc{width:var(--cw);min-width:var(--cw);border-right:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:middle;padding:0;height:var(--rh);position:relative}
+.main-tbl .dc{border-right:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:middle;padding:0;height:var(--rh);position:relative}
+.main-tbl.scroll .dc{width:var(--cw);min-width:var(--cw)}
 .dc.rh-sodk{height:var(--rh-sodk)}
 .dc.rh-sel{height:var(--rh-sel)}
 .dc.bg-result{background:var(--pl)}
@@ -95,7 +100,8 @@ main{padding:24px 20px 80px;max-width:900px;margin:0 auto}
 
 /* 헤더 행 */
 .main-tbl th.th-lbl{width:var(--lw);min-width:var(--lw);background:#0e2e8a;color:rgba(255,255,255,.65);font-size:11px;font-weight:500;text-align:center;border-right:2px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.08);padding:10px 6px}
-.main-tbl th.th-col{width:var(--cw);min-width:var(--cw);color:#fff;text-align:center;border-right:1px solid rgba(255,255,255,.12);border-bottom:1px solid rgba(255,255,255,.08);padding:8px 8px 6px;vertical-align:top}
+.main-tbl th.th-col{color:#fff;text-align:center;border-right:1px solid rgba(255,255,255,.12);border-bottom:1px solid rgba(255,255,255,.08);padding:8px 8px 6px;vertical-align:top}
+.main-tbl.scroll th.th-col{width:var(--cw);min-width:var(--cw)}
 /* 헤더 소득종류별 배경 */
 .th-gen{background:var(--c-gen)}
 .th-re{background:var(--c-re)}
@@ -575,9 +581,21 @@ function renderTable(){
   const tbl=document.getElementById('mainTbl');
   if(items.length===0){ tbl.innerHTML=''; updateTotals(); return; }
 
+  const n=items.length;
+  // 4개 이하: 테이블이 컨테이너 너비를 100% 채움, 컬럼은 비율로
+  // 5개 이상: 고정 너비 컬럼 + 가로 스크롤
+  const fillMode = n <= 4;
+  tbl.className = `main-tbl ${fillMode ? 'fill' : 'scroll'}`;
+
   // colgroup
   let cg=`<colgroup><col style="width:var(--lw);min-width:var(--lw)">`;
-  items.forEach(()=>{ cg+=`<col style="width:var(--cw);min-width:var(--cw)">`; });
+  if(fillMode){
+    // 4개 이하: 데이터 컬럼은 남은 너비를 균등 분할
+    items.forEach(()=>{ cg+=`<col>`; });
+  } else {
+    // 5개 이상: 고정 너비 (가로 스크롤)
+    items.forEach(()=>{ cg+=`<col style="width:var(--cw);min-width:var(--cw)">`; });
+  }
   cg+='</colgroup>';
 
   // thead: 소득종류별 색상 헤더
