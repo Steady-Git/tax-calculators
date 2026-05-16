@@ -390,7 +390,14 @@ function onNumInput(el, idx, field) {
   const num = parseFloat(raw)||0;
   if(field==='revenue') items[idx].revenue=num;
   else                  items[idx].expenseBook=num;
-  computeItem(idx); updateTotals();
+  // 두 번 중첩된 rAF로 input 이벤트 완전 종료 후 DOM 업데이트
+  // → 모바일 키패드 포커스 유지
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      computeItem(idx);
+      updateTotals();
+    });
+  });
 }
 
 // 포커스를 잃을 때만 쉼표 포매팅 적용
@@ -886,15 +893,13 @@ function updateItemDOM(idx){
     incEl.className=`res-val${item.income<0?' neg':''}`;
   }
   const expEl=document.getElementById(`exp_${idx}`);
-  if(expEl){
+  if(expEl && expEl !== document.activeElement){
+    // 포커스된 input은 건드리지 않음
     if(st==='wage'||st==='pension'){
-      // 근로/연금: 공제금액 표시 (읽기전용)
       expEl.textContent=item.revenue>0?fmt(Math.round(item.expense)):'—';
     } else if(st!=='other'&&rt!=='book'){
-      // 사업소득 자동계산
       expEl.textContent=(item.businessCode&&item.revenue)?fmt(Math.round(item.expense)):'—';
     }
-    // 기타소득·기장은 input이므로 사용자 입력값 유지 (별도 처리 불필요)
   }
   const dtlEl=document.getElementById(`dtl_${idx}`);
   if(dtlEl) dtlEl.textContent=item.detail||'';
