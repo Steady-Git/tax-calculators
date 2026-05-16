@@ -70,10 +70,8 @@ main{padding:24px 20px 80px;max-width:900px;margin:0 auto}
 
 /* Table */
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--rsm);border:1px solid var(--border)}
-.main-tbl{border-collapse:collapse;table-layout:fixed}
-/* 4개 이하 - 컨테이너 100% 채움 */
-.main-tbl.fill{width:100%}
-/* 5개 이상 - 컨텐츠 크기, 가로 스크롤 */
+.main-tbl{border-collapse:collapse;table-layout:fixed;width:100%}
+/* 모바일 또는 5개 이상: 고정폭 컬럼 + 가로 스크롤 */
 .main-tbl.scroll{width:max-content}
 
 /* 라벨 셀 */
@@ -582,21 +580,19 @@ function renderTable(){
   if(items.length===0){ tbl.innerHTML=''; updateTotals(); return; }
 
   const n=items.length;
-  // 모바일(<=540px): 항상 고정폭 컬럼 (1개여도 좁게, 가로 스크롤)
-  // PC: 4개 이하면 컨테이너 4분할 폭으로 고정 / 5개 이상이면 고정폭 + 가로 스크롤
-  const isMobile = window.matchMedia('(max-width: 540px)').matches;
-  const fillMode = !isMobile && n <= 4;
-  tbl.className = `main-tbl ${fillMode ? 'fill' : 'scroll'}`;
+  // 모바일(<=540px)이거나 5개 이상: scroll 모드 (고정폭 + 가로스크롤)
+  // PC + 4개 이하: 기본 width:100% 테이블 (fill, 클래스 없음)
+  const isMobile = window.innerWidth <= 540;
+  const scrollMode = isMobile || n > 4;
+  tbl.className = `main-tbl${scrollMode ? ' scroll' : ''}`;
 
-  // colgroup
+  // colgroup: scroll 모드면 고정폭, 아니면 균등 분할 (colgroup 폭 미지정 → 균등)
   let cg=`<colgroup><col style="width:var(--lw);min-width:var(--lw)">`;
-  if(fillMode){
-    // PC 4개 이하: 각 컬럼은 (전체너비 - 라벨너비)/4 로 고정
-    // → 1개여도 4칸 폭 유지, 5개 추가시 scroll 모드로 전환
-    items.forEach(()=>{ cg+=`<col style="width:calc((100% - var(--lw)) / 4)">`; });
-  } else {
-    // 모바일 또는 PC 5개 이상: 고정 너비 (가로 스크롤)
+  if(scrollMode){
     items.forEach(()=>{ cg+=`<col style="width:var(--cw);min-width:var(--cw)">`; });
+  } else {
+    // PC 4개 이하: 라벨 제외 나머지를 균등 분할 (width 미지정 → 브라우저 자동)
+    items.forEach(()=>{ cg+=`<col>`; });
   }
   cg+='</colgroup>';
 
@@ -1139,9 +1135,8 @@ document.getElementById('bizModal').addEventListener('click',e=>{ if(e.target===
 // 11. 초기화
 // ═══════════════════════════════════════════
 function init(){
-  // PC: 기본 4개 / 모바일: 기본 1개로 시작
-  const isMobile = window.matchMedia('(max-width: 540px)').matches;
-  const initialCount = isMobile ? 1 : 4;
+  // PC(>540px): 기본 4개 / 모바일(≤540px): 기본 1개
+  const initialCount = window.innerWidth > 540 ? 4 : 1;
   for(let i=0; i<initialCount; i++) addItem();
   loadData();
 }
