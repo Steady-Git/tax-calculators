@@ -384,31 +384,31 @@ function getRaw(el){
   return parseFloat((el.value||'').replace(/,/g,''))||0;
 }
 
+// 입력 중: 숫자 아닌 문자만 제거하고 계산만 실행 (el.value 재설정 안 함)
 function onNumInput(el, idx, field) {
-  const pos = el.selectionStart;
-  const prevLen = el.value.length;
-  const raw = el.value.replace(/,/g,'').replace(/\D/g,'');
+  const raw = el.value.replace(/[^\d]/g,'');
   const num = parseFloat(raw)||0;
-  const formatted = num ? fmt(num) : '';
-  el.value = formatted;
-  // 커서 위치 보정 (쉼표 개수 변화만큼)
-  const diff = formatted.length - prevLen;
-  const newPos = Math.max(0, pos + diff);
-  try { el.setSelectionRange(newPos, newPos); } catch(_){}
   if(field==='revenue') items[idx].revenue=num;
   else                  items[idx].expenseBook=num;
   computeItem(idx); updateTotals();
 }
 
-function onNumBlur(el){
-  const n = getRaw(el);
-  el.value = n ? fmt(n) : '';
+// 포커스를 잃을 때만 쉼표 포매팅 적용
+function onNumBlur(el, idx, field){
+  const raw = el.value.replace(/[^\d]/g,'');
+  const num = parseFloat(raw)||0;
+  el.value = num ? fmt(num) : '';
+  if(idx !== undefined && field !== undefined){
+    if(field==='revenue') items[idx].revenue=num;
+    else                  items[idx].expenseBook=num;
+    computeItem(idx); updateTotals();
+  }
 }
 
+// 포커스 시 쉼표 제거 → 순수 숫자만 남김 (입력 편하게)
 function onNumFocus(el){
-  // 포커스 시 커서를 끝으로
-  const len = el.value.length;
-  try { el.setSelectionRange(len, len); } catch(_){}
+  const num = getRaw(el);
+  el.value = num ? String(num) : '';
 }
 
 function handlePaste(e, el, idx, field){
@@ -719,7 +719,7 @@ function buildRows(){
         return `<input type="text" inputmode="numeric" class="num-inp" id="rev_${i}"
           placeholder="${ph}"
           oninput="onNumInput(this,${i},'revenue')"
-          onblur="onNumBlur(this)"
+          onblur="onNumBlur(this,${i},'revenue')"
           onfocus="onNumFocus(this)"
           onpaste="handlePaste(event,this,${i},'revenue')">`;
       },
@@ -742,7 +742,7 @@ function buildRows(){
           return `<input type="text" inputmode="numeric" class="num-inp" id="exp_${i}"
             placeholder="직접 입력"
             oninput="onNumInput(this,${i},'expense')"
-            onblur="onNumBlur(this)"
+            onblur="onNumBlur(this,${i},'expense')"
             onfocus="onNumFocus(this)"
             onpaste="handlePaste(event,this,${i},'expense')">`;
         }
