@@ -583,7 +583,8 @@ function renderTable(){
   // 모바일(<=540px)이거나 5개 이상: scroll 모드 (고정폭 + 가로스크롤)
   // PC + 4개 이하: 기본 width:100% 테이블 (fill, 클래스 없음)
   const isMobile = window.innerWidth <= 540;
-  const scrollMode = isMobile || n > 4;
+  // scroll 모드: 모바일에서 2개 이상이거나, PC에서 5개 이상
+  const scrollMode = (isMobile && n > 1) || (!isMobile && n > 4);
   tbl.className = `main-tbl${scrollMode ? ' scroll' : ''}`;
 
   // colgroup: scroll 모드면 고정폭, 아니면 균등 분할 (colgroup 폭 미지정 → 균등)
