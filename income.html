@@ -145,9 +145,10 @@ main{padding:24px 20px 80px;max-width:900px;margin:0 auto}
 .rate-none{font-size:11px;color:var(--t3);padding:0 10px}
 
 /* 숫자 입력 (input) */
-.num-inp{display:block;width:100%;height:100%;padding:0 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right;color:var(--text);outline:none;background:transparent;border:none;cursor:text;caret-color:var(--primary);-webkit-appearance:none;appearance:none}
+.num-inp{display:block;width:100%;height:var(--rh);padding:0 10px;font-family:'IBM Plex Mono',monospace;font-size:16px;text-align:right;color:var(--text);outline:none;background:transparent;border:none;cursor:text;caret-color:var(--primary);-webkit-appearance:none;appearance:none;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;box-sizing:border-box}
 .num-inp:focus{background:rgba(26,79,196,.04);box-shadow:inset 0 0 0 2px var(--primary)}
-.num-inp::placeholder{color:var(--t3);font-family:'Noto Sans KR',sans-serif;font-size:11px}
+.num-inp::placeholder{color:var(--t3);font-family:'Noto Sans KR',sans-serif;font-size:12px}
+@media(min-width:541px){.num-inp{font-size:13px}}
 
 /* 결과값 */
 .res-val{display:block;width:100%;height:100%;padding:0 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;text-align:right;color:var(--primary);line-height:var(--rh);white-space:nowrap}
@@ -384,35 +385,27 @@ function getRaw(el){
   return parseFloat((el.value||'').replace(/,/g,''))||0;
 }
 
-// 입력 중: 숫자 아닌 문자만 제거하고 계산만 실행 (el.value 재설정 안 함)
+// 입력 중: 값만 저장. DOM/계산 일체 없음 (포커스 안정성 최우선)
 function onNumInput(el, idx, field) {
   const raw = el.value.replace(/[^\d]/g,'');
   const num = parseFloat(raw)||0;
   if(field==='revenue') items[idx].revenue=num;
   else                  items[idx].expenseBook=num;
-  // 두 번 중첩된 rAF로 input 이벤트 완전 종료 후 DOM 업데이트
-  // → 모바일 키패드 포커스 유지
-  requestAnimationFrame(()=>{
-    requestAnimationFrame(()=>{
-      computeItem(idx);
-      updateTotals();
-    });
-  });
+  // 계산은 blur에서만 실행하므로 여기서는 아무 DOM 업데이트도 하지 않음
 }
 
-// 포커스를 잃을 때만 쉼표 포매팅 적용
+// 포커스를 잃을 때: 쉼표 포매팅 + 계산 + 합산 업데이트
 function onNumBlur(el, idx, field){
   const raw = el.value.replace(/[^\d]/g,'');
   const num = parseFloat(raw)||0;
   el.value = num ? fmt(num) : '';
-  if(idx !== undefined && field !== undefined){
-    if(field==='revenue') items[idx].revenue=num;
-    else                  items[idx].expenseBook=num;
-    computeItem(idx); updateTotals();
-  }
+  if(field==='revenue') items[idx].revenue=num;
+  else                  items[idx].expenseBook=num;
+  computeItem(idx);
+  updateTotals();
 }
 
-// 포커스 시 쉼표 제거 → 순수 숫자만 남김 (입력 편하게)
+// 포커스 시: 쉼표 제거 → 순수 숫자만 (선택 안 함, 키패드 안정)
 function onNumFocus(el){
   const num = getRaw(el);
   el.value = num ? String(num) : '';
