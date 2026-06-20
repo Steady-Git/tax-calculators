@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전기차 충전소 정보 조회</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: #f4f6f8;
+    margin: 0;
+    padding: 0;
+    color: #222;
+  }
+  header {
+    background: #1b5e20;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+  }
+  header h1 { margin: 0; font-size: 22px; }
+  header p { margin: 6px 0 0; font-size: 13px; opacity: 0.85; }
+  .container { max-width: 900px; margin: 20px auto; padding: 0 16px; }
+  .search-box {
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+  }
+  .search-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .search-row label {
+    font-size: 13px;
+    color: #555;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .field { flex: 1; min-width: 140px; }
+  input[type="text"], select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  button {
+    background: #2e7d32;
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  button:hover { background: #1b5e20; }
+  .status { font-size: 13px; color: #777; margin-top: 8px; }
+  .results { display: flex; flex-direction: column; gap: 12px; }
+  .card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .card h3 { margin: 0 0 6px; font-size: 16px; color: #1b5e20; }
+  .card .addr { font-size: 13px; color: #555; margin-bottom: 8px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .badge {
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+  .badge.busy { background: #ffebee; color: #c62828; }
+  .badge.free { background: #e8f5e9; color: #2e7d32; }
+  .meta { font-size: 12px; color: #777; }
+  .error {
+    background: #fff3e0;
+    color: #e65100;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .empty { text-align: center; color: #999; padding: 40px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ 전기자동차 충전소 정보</h1>
+  <p>한국환경공단 전기자동차 충전소 정보 Open API</p>
+</header>
+
+<div class="container">
+  <div class="search-box">
+    <div class="search-row">
+      <div class="field">
+        <label>시/도 (선택)</label>
+        <select id="zcode">
+          <option value="">전체</option>
+          <option value="11">서울특별시</option>
+          <option value="26">부산광역시</option>
+          <option value="27">대구광역시</option>
+          <option value="28">인천광역시</option>
+          <option value="29">광주광역시</option>
+          <option value="30">대전광역시</option>
+          <option value="31">울산광역시</option>
+          <option value="36">세종특별자치시</option>
+          <option value="41">경기도</option>
+          <option value="42">강원특별자치도</option>
+          <option value="43">충청북도</option>
+          <option value="44">충청남도</option>
+          <option value="45">전북특별자치도</option>
+          <option value="46">전라남도</option>
+          <option value="47">경상북도</option>
+          <option value="48">경상남도</option>
+          <option value="50">제주특별자치도</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>시/군/구 (선택)</label>
+        <select id="zscode">
+          <option value="">전체</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>한 페이지 결과 수</label>
+        <input type="text" id="numOfRows" value="20">
+      </div>
+    </div>
+    <button id="searchBtn">충전소 검색</button>
+    <div class="status" id="status">검색 버튼을 눌러 충전소 정보를 조회하세요.</div>
+  </div>
+
+  <div id="errorBox"></div>
+  <div class="results" id="results"></div>
+</div>
+
+<script>
+const API_KEY = "dc8294cd0177c5d51b45be29652fb691c4b18e055f22c87b0967ca1a78c7df0a";
+const END_POINT = "https://apis.data.go.kr/B552584/EvCharger/getChargerInfo";
+
+// 시/도별 시/군/구 코드 (법정동 코드 앞 5자리 기준: 앞 2자리=zcode, 뒤 3자리=zscode)
+const SIGUNGU = {
+  "11": [["110","종로구"],["140","중구"],["170","용산구"],["200","성동구"],["215","광진구"],["230","동대문구"],["260","중랑구"],["290","성북구"],["305","강북구"],["320","도봉구"],["350","노원구"],["380","은평구"],["410","서대문구"],["440","마포구"],["470","양천구"],["500","강서구"],["530","구로구"],["545","금천구"],["560","영등포구"],["590","동작구"],["620","관악구"],["650","서초구"],["680","강남구"],["710","송파구"],["740","강동구"]],
+  "26": [["110","중구"],["140","서구"],["170","동구"],["200","영도구"],["230","부산진구"],["260","동래구"],["290","남구"],["320","북구"],["350","해운대구"],["380","사하구"],["410","금정구"],["440","강서구"],["470","연제구"],["500","수영구"],["530","사상구"],["710","기장군"]],
+  "27": [["110","중구"],["140","동구"],["170","서구"],["200","남구"],["230","북구"],["260","수성구"],["290","달서구"],["710","달성군"]],
+  "28": [["110","중구"],["140","동구"],["177","미추홀구"],["185","연수구"],["200","남동구"],["237","부평구"],["245","계양구"],["260","서구"],["710","강화군"],["720","옹진군"]],
+  "29": [["110","동구"],["140","서구"],["155","남구"],["170","북구"],["200","광산구"]],
+  "30": [["110","동구"],["140","중구"],["170","서구"],["200","유성구"],["230","대덕구"]],
+  "31": [["110","중구"],["140","남구"],["170","동구"],["200","북구"],["710","울주군"]],
+  "36": [["110","세종특별자치시"]],
+  "41": [["111","수원시 장안구"],["113","수원시 권선구"],["115","수원시 팔달구"],["117","수원시 영통구"],["131","성남시 수정구"],["133","성남시 중원구"],["135","성남시 분당구"],["150","의정부시"],["171","안양시 만안구"],["173","안양시 동안구"],["190","부천시"],["210","광명시"],["220","평택시"],["250","동두천시"],["271","안산시 상록구"],["273","안산시 단원구"],["281","고양시 덕양구"],["285","고양시 일산동구"],["287","고양시 일산서구"],["290","과천시"],["310","구리시"],["360","남양주시"],["370","오산시"],["390","시흥시"],["410","군포시"],["430","의왕시"],["450","하남시"],["461","용인시 처인구"],["463","용인시 기흥구"],["465","용인시 수지구"],["480","파주시"],["500","이천시"],["550","안성시"],["570","김포시"],["590","화성시"],["610","광주시"],["630","양주시"],["650","포천시"],["670","여주시"],["800","연천군"],["820","가평군"],["830","양평군"]],
+};
+
+const searchBtn = document.getElementById('searchBtn');
+const zcodeEl = document.getElementById('zcode');
+const zscodeEl = document.getElementById('zscode');
+
+function updateSigungu() {
+  const zc = zcodeEl.value;
+  zscodeEl.innerHTML = '<option value="">전체</option>';
+  if (SIGUNGU[zc]) {
+    SIGUNGU[zc].forEach(([code, name]) => {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = name;
+      zscodeEl.appendChild(opt);
+    });
+  }
+}
+zcodeEl.addEventListener('change', updateSigungu);
+const statusEl = document.getElementById('status');
+const resultsEl = document.getElementById('results');
+const errorBoxEl = document.getElementById('errorBox');
+
+searchBtn.addEventListener('click', searchChargers);
+
+async function searchChargers() {
+  errorBoxEl.innerHTML = '';
+  resultsEl.innerHTML = '';
+  statusEl.textContent = '조회 중입니다...';
+
+  const zcode = document.getElementById('zcode').value.trim();
+  const zscode = document.getElementById('zscode').value.trim();
+  const numOfRows = document.getElementById('numOfRows').value.trim() || '20';
+
+  const params = new URLSearchParams({
+    serviceKey: API_KEY,
+    pageNo: '1',
+    numOfRows: numOfRows,
+    dataType: 'XML'
+  });
+  if (zcode) params.append('zcode', zcode);
+  if (zscode) params.append('zscode', zscode);
+
+  const url = `${END_POINT}?${params.toString()}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, 'application/xml');
+
+    const parseErr = xml.querySelector('parsererror');
+    if (parseErr) throw new Error('응답을 해석할 수 없습니다.');
+
+    const resultCode = xml.querySelector('resultCode');
+    const resultMsg = xml.querySelector('resultMsg');
+    if (resultCode && resultCode.textContent !== '00') {
+      throw new Error((resultMsg ? resultMsg.textContent : '오류') + ` (코드 ${resultCode.textContent})`);
+    }
+
+    const items = xml.querySelectorAll('item');
+    if (items.length === 0) {
+      resultsEl.innerHTML = '<div class="empty">검색 결과가 없습니다.</div>';
+      statusEl.textContent = '검색 결과: 0건';
+      return;
+    }
+
+    statusEl.textContent = `검색 결과: ${items.length}건`;
+    renderItems(items);
+
+  } catch (err) {
+    let msg = err.message || '알 수 없는 오류가 발생했습니다.';
+    errorBoxEl.innerHTML = `<div class="error">
+      ⚠️ 데이터를 불러오지 못했습니다: ${escapeHtml(msg)}<br>
+      ※ 브라우저(CORS) 정책으로 인해 공공데이터포털 API가 직접 호출되지 않을 수 있습니다.
+      이 경우 파일을 그대로 실행하지 말고, 간단한 로컬 서버를 통해 열거나
+      서버 사이드(프록시)를 거쳐 호출해야 합니다.
+    </div>`;
+    statusEl.textContent = '조회 실패';
+  }
+}
+
+function getText(item, tag) {
+  const el = item.querySelector(tag);
+  return el ? el.textContent.trim() : '';
+}
+
+function renderItems(items) {
+  const grouped = {};
+  items.forEach(item => {
+    const statId = getText(item, 'statId');
+    if (!grouped[statId]) grouped[statId] = { info: item, chargers: [] };
+    grouped[statId].chargers.push(item);
+  });
+
+  let html = '';
+  Object.values(grouped).forEach(group => {
+    const item = group.info;
+    const statNm = getText(item, 'statNm') || '이름 미상';
+    const addr = getText(item, 'addr') || '주소 정보 없음';
+    const useTime = getText(item, 'useTime');
+    const busiNm = getText(item, 'busiNm');
+    const tel = getText(item, 'busiCall');
+
+    const badges = group.chargers.map(c => {
+      const stat = getText(c, 'stat');
+      const chgerType = getText(c, 'chgerType');
+      let label = '상태 미상';
+      let cls = '';
+      if (stat === '2') { label = '충전 대기(이용 가능)'; cls = 'free'; }
+      else if (stat === '3') { label = '충전 중'; cls = 'busy'; }
+      else if (stat === '1') { label = '통신 이상'; cls = 'busy'; }
+      else if (stat === '4') { label = '고장/이용불가'; cls = 'busy'; }
+      else if (stat === '5') { label = '통신 미연결'; cls = 'busy'; }
+      else if (stat === '9') { label = '운영 정지'; cls = 'busy'; }
+      return `<span class="badge ${cls}">${escapeHtml(chgerType ? chgerType + '구 ' : '')}${label}</span>`;
+    }).join('');
+
+    html += `
+      <div class="card">
+        <h3>${escapeHtml(statNm)}</h3>
+        <div class="addr">📍 ${escapeHtml(addr)}</div>
+        <div class="badges">${badges}</div>
+        <div class="meta">
+          ${busiNm ? '운영기관: ' + escapeHtml(busiNm) + ' &nbsp;|&nbsp; ' : ''}
+          ${tel ? '문의: ' + escapeHtml(tel) + ' &nbsp;|&nbsp; ' : ''}
+          ${useTime ? '이용시간: ' + escapeHtml(useTime) : ''}
+        </div>
+      </div>`;
+  });
+
+  resultsEl.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+
+</body>
+</html>
