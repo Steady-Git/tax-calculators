@@ -44,6 +44,15 @@
 }
 </script>
 
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-TM0F4HQ798"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-TM0F4HQ798');
+</script>
+
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5519392265780075"
      crossorigin="anonymous"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -317,6 +326,32 @@ nav { padding: 0.5rem 0; flex: 1; }
   color: var(--ink-dim);
   border-top: 1px solid var(--border);
   line-height: 1.7;
+}
+
+/* ── 방문자 카운터 ── */
+.visitor-counter {
+  padding: 0.75rem 1.25rem 1rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.visitor-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 3px;
+}
+.visitor-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+  line-height: 1.2;
 }
 
 /* ── 메인 ── */
@@ -652,6 +687,20 @@ nav { padding: 0.5rem 0; flex: 1; }
     <div class="sidebar-footer">
       2026년 기준 법령 적용<br>본 계산 결과는 참고용이며, 실제 세액은 세무사 확인을 권장합니다.
     </div>
+
+    <!-- 방문자 카운터 -->
+    <div class="visitor-counter">
+      <div class="visitor-label">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity:0.5"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/></svg>
+        오늘 방문자
+      </div>
+      <div class="visitor-count" id="visitorCount">—</div>
+      <div class="visitor-label" style="margin-top:6px">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="opacity:0.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        누적 방문자
+      </div>
+      <div class="visitor-count" id="totalCount">—</div>
+    </div>
   </aside>
 
   <!-- ══ 메인 ══ -->
@@ -939,6 +988,43 @@ function closeCalc() {
   setTimeout(() => { document.getElementById('calcFrame').src = ''; }, 200);
   if (activeNavItem) { activeNavItem.classList.remove('active'); activeNavItem = null; }
 }
+</script>
+<!-- ══ 방문자 카운터 ══ -->
+<script>
+(function() {
+  const TODAY = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+  // ── 누적 카운터 ──
+  let total = parseInt(localStorage.getItem('vc_total') || '0', 10);
+
+  // ── 오늘 방문자 (날짜 바뀌면 리셋) ──
+  let dailyData = JSON.parse(localStorage.getItem('vc_daily') || '{}');
+  if (dailyData.date !== TODAY) {
+    dailyData = { date: TODAY, count: 0 };
+  }
+
+  // ── 세션 내 첫 방문만 카운트 ──
+  if (!sessionStorage.getItem('vc_visited')) {
+    sessionStorage.setItem('vc_visited', '1');
+    dailyData.count += 1;
+    total += 1;
+    localStorage.setItem('vc_daily', JSON.stringify(dailyData));
+    localStorage.setItem('vc_total', String(total));
+  }
+
+  // ── 숫자 포맷 (천 단위 콤마) ──
+  function fmt(n) {
+    return n.toLocaleString('ko-KR');
+  }
+
+  // ── DOM 렌더 ──
+  window.addEventListener('DOMContentLoaded', function() {
+    const todayEl = document.getElementById('visitorCount');
+    const totalEl = document.getElementById('totalCount');
+    if (todayEl) todayEl.textContent = fmt(dailyData.count);
+    if (totalEl) totalEl.textContent = fmt(total);
+  });
+})();
 </script>
 <!-- ══ Service Worker 등록 ══ -->
 <script>
