@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘 뭐 먹지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#2b2420;
+    --paper:#f6efe4;
+    --paper-deep:#ece0cd;
+    --clay:#c8523b;
+    --clay-deep:#9e3a27;
+    --olive:#5c6b46;
+    --gold:#d99b2b;
+    --line:#d8c9b0;
+    --muted:#7d7161;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:'IBM Plex Sans KR',sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.5;
+    min-height:100vh;
+    padding:20px 16px 60px;
+    background-image:radial-gradient(circle at 20% 10%,rgba(200,82,59,.06),transparent 40%),radial-gradient(circle at 90% 80%,rgba(92,107,70,.07),transparent 45%);
+  }
+  .wrap{max-width:520px;margin:0 auto}
+
+  header{text-align:center;padding:24px 0 10px}
+  .eyebrow{
+    font-size:12px;letter-spacing:.32em;text-transform:uppercase;
+    color:var(--clay);font-weight:600;margin-bottom:10px;
+  }
+  h1{
+    font-family:'Gowun Batang',serif;font-weight:700;
+    font-size:clamp(34px,10vw,46px);line-height:1.1;letter-spacing:-.01em;
+  }
+  h1 .bowl{display:inline-block;transform:translateY(4px);margin-right:6px}
+  .sub{color:var(--muted);font-size:14px;margin-top:12px}
+
+  .card{
+    background:#fffaf1;border:1px solid var(--line);
+    border-radius:20px;padding:22px 20px;margin-top:18px;
+    box-shadow:0 1px 0 #fff inset,0 12px 30px -18px rgba(43,36,32,.4);
+  }
+
+  .q{margin-bottom:22px}
+  .q:last-child{margin-bottom:0}
+  .q-label{
+    display:flex;align-items:baseline;gap:8px;
+    font-weight:600;font-size:15px;margin-bottom:12px;
+  }
+  .q-num{
+    font-family:'Gowun Batang',serif;color:var(--clay);
+    font-size:13px;font-weight:700;
+  }
+  .opts{display:flex;flex-wrap:wrap;gap:8px}
+  .opt{
+    border:1px solid var(--line);background:#fff;
+    color:var(--ink);border-radius:999px;
+    padding:9px 15px;font-size:14px;font-family:inherit;
+    cursor:pointer;transition:.15s;user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .opt:hover{border-color:var(--clay)}
+  .opt.on{
+    background:var(--clay);border-color:var(--clay);color:#fff;
+    box-shadow:0 6px 14px -6px var(--clay);
+  }
+
+  .go{
+    width:100%;margin-top:6px;border:none;cursor:pointer;
+    background:var(--ink);color:var(--paper);
+    font-family:'Gowun Batang',serif;font-weight:700;font-size:19px;
+    padding:16px;border-radius:16px;letter-spacing:.03em;
+    transition:.15s;-webkit-tap-highlight-color:transparent;
+  }
+  .go:hover{background:var(--clay-deep)}
+  .go:active{transform:scale(.99)}
+
+  .roulette-btn{
+    width:100%;margin-top:10px;cursor:pointer;
+    background:transparent;border:1px dashed var(--olive);
+    color:var(--olive);font-family:inherit;font-weight:600;font-size:14px;
+    padding:13px;border-radius:14px;transition:.15s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .roulette-btn:hover{background:rgba(92,107,70,.08)}
+
+  /* results */
+  .results{margin-top:22px;display:none}
+  .results.show{display:block;animation:rise .4s ease}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .results-head{
+    text-align:center;font-size:13px;color:var(--muted);
+    margin-bottom:14px;letter-spacing:.05em;
+  }
+  .pick{
+    background:#fffaf1;border:1px solid var(--line);border-radius:18px;
+    padding:18px 18px;margin-bottom:12px;display:flex;gap:14px;align-items:center;
+    box-shadow:0 10px 24px -18px rgba(43,36,32,.5);
+  }
+  .pick.hero{
+    background:linear-gradient(160deg,#fff6ea,#fbe9d3);
+    border-color:var(--gold);position:relative;overflow:hidden;
+  }
+  .pick.hero::after{
+    content:"BEST";position:absolute;top:12px;right:-30px;
+    background:var(--gold);color:#fff;font-size:11px;font-weight:700;
+    letter-spacing:.15em;padding:3px 34px;transform:rotate(38deg);
+  }
+  .emoji{font-size:34px;line-height:1;flex-shrink:0}
+  .pick .name{font-family:'Gowun Batang',serif;font-weight:700;font-size:19px}
+  .pick .why{font-size:13px;color:var(--muted);margin-top:3px}
+  .tag{
+    display:inline-block;font-size:11px;color:var(--olive);
+    border:1px solid var(--line);border-radius:6px;
+    padding:1px 7px;margin-top:6px;margin-right:4px;
+  }
+
+  .again{
+    width:100%;margin-top:8px;cursor:pointer;background:transparent;
+    border:1px solid var(--line);color:var(--muted);font-family:inherit;
+    font-size:14px;padding:12px;border-radius:12px;transition:.15s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .again:hover{border-color:var(--clay);color:var(--clay)}
+
+  /* roulette overlay */
+  .overlay{
+    position:fixed;inset:0;background:rgba(43,36,32,.55);
+    backdrop-filter:blur(3px);display:none;
+    align-items:center;justify-content:center;z-index:50;padding:24px;
+  }
+  .overlay.show{display:flex}
+  .wheel-box{
+    background:#fffaf1;border-radius:22px;padding:30px 26px;
+    text-align:center;max-width:340px;width:100%;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.5);
+  }
+  .wheel-box .eyebrow{margin-bottom:18px}
+  .slot{
+    font-family:'Gowun Batang',serif;font-weight:700;
+    font-size:32px;min-height:46px;color:var(--clay);
+    padding:14px 0;
+  }
+  .slot .em{font-size:40px;display:block;margin-bottom:6px}
+  .empty{text-align:center;color:var(--muted);font-size:14px;padding:20px 0}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:30px;opacity:.8}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">약속 메뉴 정하기</div>
+    <h1><span class="bowl">🍲</span>오늘 뭐 먹지</h1>
+    <p class="sub">몇 가지만 고르면 딱 맞는 메뉴를 골라드려요.<br>못 정하겠으면 룰렛에 맡기세요.</p>
+  </header>
+
+  <div class="card" id="form">
+    <div class="q" data-key="who">
+      <div class="q-label"><span class="q-num">01</span>누구랑 가나요?</div>
+      <div class="opts">
+        <button class="opt" data-v="couple">연인</button>
+        <button class="opt" data-v="friends">친구들</button>
+        <button class="opt" data-v="family">가족</button>
+        <button class="opt" data-v="work">직장 동료</button>
+        <button class="opt" data-v="solo">혼자</button>
+      </div>
+    </div>
+
+    <div class="q" data-key="mood">
+      <div class="q-label"><span class="q-num">02</span>어떤 분위기?</div>
+      <div class="opts">
+        <button class="opt" data-v="casual">편하게</button>
+        <button class="opt" data-v="special">특별하게</button>
+        <button class="opt" data-v="lively">시끌벅적</button>
+        <button class="opt" data-v="cozy">조용조용</button>
+      </div>
+    </div>
+
+    <div class="q" data-key="budget">
+      <div class="q-label"><span class="q-num">03</span>예산은?</div>
+      <div class="opts">
+        <button class="opt" data-v="low">가성비</button>
+        <button class="opt" data-v="mid">적당히</button>
+        <button class="opt" data-v="high">플렉스</button>
+      </div>
+    </div>
+
+    <div class="q" data-key="craving">
+      <div class="q-label"><span class="q-num">04</span>땡기는 종류 <span style="font-weight:400;color:var(--muted);font-size:12px">· 복수 선택</span></div>
+      <div class="opts" data-multi="1">
+        <button class="opt" data-v="korean">한식</button>
+        <button class="opt" data-v="meat">고기·구이</button>
+        <button class="opt" data-v="soup">국물·찌개</button>
+        <button class="opt" data-v="noodle">면·분식</button>
+        <button class="opt" data-v="japanese">일식</button>
+        <button class="opt" data-v="chinese">중식</button>
+        <button class="opt" data-v="western">양식</button>
+        <button class="opt" data-v="asian">아시안</button>
+        <button class="opt" data-v="spicy">매운거</button>
+      </div>
+    </div>
+
+    <button class="go" id="go">메뉴 추천받기</button>
+    <button class="roulette-btn" id="roulette">🎡 못 정하겠어요 · 룰렛 돌리기</button>
+  </div>
+
+  <div class="results" id="results"></div>
+
+  <footer>기분 좋은 한 끼 되세요 🌿</footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="wheel-box">
+    <div class="eyebrow">룰렛 돌리는 중…</div>
+    <div class="slot" id="slot"><span class="em">🍽️</span>—</div>
+  </div>
+</div>
+
+<script>
+const DISHES = [
+  {name:"삼겹살", em:"🥓", tags:["korean","meat"], moods:["casual","lively"], budget:["low","mid"], who:["friends","family","work"]},
+  {name:"소고기 오마카세", em:"🥩", tags:["meat","japanese"], moods:["special","cozy"], budget:["high"], who:["couple","family"]},
+  {name:"김치찌개", em:"🍲", tags:["korean","soup","spicy"], moods:["casual","cozy"], budget:["low"], who:["family","work","solo"]},
+  {name:"부대찌개", em:"🍜", tags:["korean","soup","spicy"], moods:["lively","casual"], budget:["low","mid"], who:["friends","work"]},
+  {name:"곱창·막창", em:"🔥", tags:["meat","korean"], moods:["lively"], budget:["mid"], who:["friends","work"]},
+  {name:"파스타 & 와인", em:"🍝", tags:["western"], moods:["special","cozy"], budget:["mid","high"], who:["couple","friends"]},
+  {name:"스테이크", em:"🥩", tags:["western","meat"], moods:["special"], budget:["high"], who:["couple","family"]},
+  {name:"초밥", em:"🍣", tags:["japanese"], moods:["special","cozy"], budget:["mid","high"], who:["couple","family","work"]},
+  {name:"라멘", em:"🍜", tags:["japanese","noodle","soup"], moods:["casual","cozy"], budget:["low","mid"], who:["couple","friends","solo"]},
+  {name:"돈카츠", em:"🍱", tags:["japanese"], moods:["casual"], budget:["low","mid"], who:["family","solo","friends"]},
+  {name:"마라탕", em:"🌶️", tags:["chinese","soup","spicy","noodle"], moods:["casual","lively"], budget:["low","mid"], who:["friends","solo"]},
+  {name:"양꼬치 & 칭따오", em:"🍢", tags:["chinese","meat"], moods:["lively"], budget:["mid"], who:["friends","work"]},
+  {name:"짜장·짬뽕 (중식당)", em:"🥡", tags:["chinese","noodle","soup"], moods:["casual","lively"], budget:["low","mid"], who:["family","work","friends"]},
+  {name:"쌀국수", em:"🍲", tags:["asian","noodle","soup"], moods:["casual","cozy"], budget:["low","mid"], who:["couple","friends","solo"]},
+  {name:"팟타이 (태국음식)", em:"🍤", tags:["asian","noodle"], moods:["casual","special"], budget:["mid"], who:["couple","friends"]},
+  {name:"떡볶이 & 튀김", em:"🥟", tags:["korean","noodle","spicy"], moods:["casual","lively"], budget:["low"], who:["friends","solo","couple"]},
+  {name:"칼국수", em:"🍜", tags:["korean","noodle","soup"], moods:["cozy","casual"], budget:["low"], who:["family","solo"]},
+  {name:"냉면 & 갈비", em:"🍖", tags:["korean","meat","noodle"], moods:["casual","lively"], budget:["mid"], who:["family","friends","work"]},
+  {name:"국밥", em:"🥘", tags:["korean","soup"], moods:["casual","cozy"], budget:["low"], who:["solo","work","family"]},
+  {name:"치킨 & 맥주", em:"🍗", tags:["western","meat"], moods:["casual","lively"], budget:["low","mid"], who:["friends","couple","work"]},
+  {name:"수제버거", em:"🍔", tags:["western"], moods:["casual"], budget:["mid"], who:["couple","friends","solo"]},
+  {name:"화덕피자", em:"🍕", tags:["western"], moods:["casual","lively"], budget:["mid"], who:["friends","family","couple"]},
+  {name:"닭갈비", em:"🐔", tags:["korean","meat","spicy"], moods:["lively","casual"], budget:["mid"], who:["friends","couple","family"]},
+  {name:"보쌈·족발", em:"🍖", tags:["korean","meat"], moods:["casual","lively"], budget:["mid"], who:["family","friends","work"]},
+  {name:"한정식", em:"🍚", tags:["korean"], moods:["special","cozy"], budget:["high"], who:["family","couple"]},
+  {name:"샤브샤브", em:"🍲", tags:["japanese","soup","meat"], moods:["cozy","special"], budget:["mid","high"], who:["couple","family"]},
+  {name:"타코·부리토", em:"🌮", tags:["western","asian","spicy"], moods:["casual","lively"], budget:["low","mid"], who:["friends","couple"]},
+  {name:"장어구이", em:"🍤", tags:["korean","meat"], moods:["special"], budget:["high"], who:["family","couple","work"]},
+];
+
+const state = {who:null, mood:null, budget:null, craving:new Set()};
+
+document.querySelectorAll('.opts').forEach(group=>{
+  const multi = group.dataset.multi === "1";
+  const key = group.closest('.q').dataset.key;
+  group.querySelectorAll('.opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const v = btn.dataset.v;
+      if(multi){
+        if(state.craving.has(v)){state.craving.delete(v);btn.classList.remove('on');}
+        else{state.craving.add(v);btn.classList.add('on');}
+      }else{
+        group.querySelectorAll('.opt').forEach(b=>b.classList.remove('on'));
+        btn.classList.add('on');
+        state[key]=v;
+      }
+    });
+  });
+});
+
+function score(dish){
+  let s = 0;
+  if(state.who && dish.who.includes(state.who)) s += 3;
+  if(state.mood && dish.moods.includes(state.mood)) s += 3;
+  if(state.budget && dish.budget.includes(state.budget)) s += 2;
+  if(state.craving.size){
+    const hits = dish.tags.filter(t=>state.craving.has(t)).length;
+    s += hits * 4;
+  }
+  s += Math.random()*1.2; // tie-breaker
+  return s;
+}
+
+const WHY = {
+  couple:"둘이 오붓하게", friends:"친구들끼리 신나게", family:"온 가족이 편하게",
+  work:"동료들과 무난하게", solo:"혼자서도 든든하게",
+  special:"특별한 날에 딱", casual:"부담 없이", lively:"분위기 살리기 좋게", cozy:"차분하게 즐기기 좋게"
+};
+
+function whyText(dish){
+  const bits=[];
+  if(state.mood && dish.moods.includes(state.mood)) bits.push(WHY[state.mood]);
+  else if(state.who) bits.push(WHY[state.who]);
+  if(state.budget==="low"&&dish.budget.includes("low")) bits.push("가성비까지");
+  if(state.budget==="high"&&dish.budget.includes("high")) bits.push("제대로 플렉스");
+  return bits.length?bits.join(" · "):"오늘 이거 어때요";
+}
+
+const TAGKO={korean:"한식",meat:"고기",soup:"국물",noodle:"면",japanese:"일식",chinese:"중식",western:"양식",asian:"아시안",spicy:"매운맛"};
+
+document.getElementById('go').addEventListener('click',()=>{
+  const ranked=[...DISHES].map(d=>({d,s:score(d)})).sort((a,b)=>b.s-a.s);
+  const top=ranked.slice(0,3).map(x=>x.d);
+  renderResults(top);
+});
+
+function renderResults(list){
+  const box=document.getElementById('results');
+  box.innerHTML='<div class="results-head">이 중에 하나 어때요?</div>'+
+    list.map((d,i)=>`
+      <div class="pick ${i===0?'hero':''}">
+        <div class="emoji">${d.em}</div>
+        <div>
+          <div class="name">${d.name}</div>
+          <div class="why">${whyText(d)}</div>
+          <div>${d.tags.slice(0,3).map(t=>`<span class="tag">${TAGKO[t]||t}</span>`).join('')}</div>
+        </div>
+      </div>`).join('')+
+    '<button class="again" id="again">다시 추천받기</button>';
+  box.classList.add('show');
+  document.getElementById('again').addEventListener('click',()=>{
+    const ranked=[...DISHES].map(d=>({d,s:score(d)})).sort((a,b)=>b.s-a.s);
+    renderResults(ranked.slice(0,3).map(x=>x.d));
+    box.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// roulette
+document.getElementById('roulette').addEventListener('click',()=>{
+  // pool: matches craving if any selected, else all
+  let pool = DISHES;
+  if(state.craving.size){
+    const f = DISHES.filter(d=>d.tags.some(t=>state.craving.has(t)));
+    if(f.length) pool=f;
+  }
+  const overlay=document.getElementById('overlay');
+  const slot=document.getElementById('slot');
+  overlay.classList.add('show');
+  let ticks=0; const total=24+Math.floor(Math.random()*8);
+  let delay=40;
+  function spin(){
+    const d=pool[Math.floor(Math.random()*pool.length)];
+    slot.innerHTML=`<span class="em">${d.em}</span>${d.name}`;
+    ticks++;
+    if(ticks<total){
+      if(ticks>total-8) delay+=35;
+      setTimeout(spin,delay);
+    }else{
+      slot.style.color='var(--olive)';
+      setTimeout(()=>{
+        overlay.classList.remove('show');
+        slot.style.color='var(--clay)';
+        renderResults([d]);
+      },850);
+    }
+  }
+  spin();
+});
+document.getElementById('overlay').addEventListener('click',e=>{
+  if(e.target.id==='overlay') e.target.classList.remove('show');
+});
+</script>
+</body>
+</html>
